@@ -4,22 +4,71 @@ declare(strict_types=1);
 
 namespace Core;
 
+use Predis\Client as RedisClient;
+
 /**
- * Simple File-based Cache Helper
- * For production, consider using Redis or Memcached
+ * Cache Helper - Supports File and Redis drivers
+ * Driver is configured via CACHE_DRIVER environment variable
  */
 class Cache
 {
     private static string $cacheDir;
     private static int $defaultTtl = 300; // 5 minutes
+    private static ?string $driver = null;
+    private static ?RedisClient $redis = null;
 
     private static function init(): void
+    {
+        if (self::$driver === null) {
+            self::$driver = Env::get('CACHE_DRIVER', 'file');
+        }
+
+        if (self::$driver === 'redis') {
+            self::initRedis();
+        } else {
+            self::initFile();
+        }
+    }
+
+    private static function initFile(): void
     {
         if (!isset(self::$cacheDir)) {
             self::$cacheDir = dirname(__DIR__) . '/storage/cache/';
 
             if (!is_dir(self::$cacheDir)) {
                 mkdir(self::$cacheDir, 0755, true);
+            }
+        }
+    }
+
+    private static function initRedis(): void
+    {
+        if (self::$redis === null) {
+            $host = Env::get('REDIS_HOST', '127.0.0.1');
+            $port = (int) Env::get('REDIS_PORT', 6379);
+            $password = Env::get('REDIS_PASSWORD', '');
+            $database = (int) Env::get('REDIS_DATABASE', 0);
+
+            $config = [
+                'scheme' => 'tcp',
+                'host' => $host,
+                'port' => $port,
+                'database' => $database,
+            ];
+
+            if (!empty($password)) {
+                $config['password'] = $password;
+            }
+
+            try {
+                self::$redis = new RedisClient($config);
+                // Test connection
+                self::$redis->ping();
+            } catch (\Exception $e) {
+                // Fallback to file cache if Redis fails
+                error_log('Redis connection failed: ' . $e->getMessage() . '. Falling back to file cache.');
+                self::$driver = 'file';
+                self::initFile();
             }
         }
     }
@@ -31,6 +80,17 @@ class Cache
     {
         self::init();
 
+        if (self::$driver === 'redis' && self::$redis) {
+            try {
+                $value = self::$redis->get($key);
+                return $value !== null ? unserialize($value) : null;
+            } catch (\Exception $e) {
+                error_log('Redis get error: ' . $e->getMessage());
+                return null;
+            }
+        }
+
+        // File cache
         $file = self::$cacheDir . md5($key) . '.cache';
 
         if (!file_exists($file)) {
@@ -56,6 +116,18 @@ class Cache
         self::init();
 
         $ttl = $ttl ?? self::$defaultTtl;
+
+        if (self::$driver === 'redis' && self::$redis) {
+            try {
+                $serialized = serialize($value);
+                return (bool) self::$redis->setex($key, $ttl, $serialized);
+            } catch (\Exception $e) {
+                error_log('Redis set error: ' . $e->getMessage());
+                return false;
+            }
+        }
+
+        // File cache
         $file = self::$cacheDir . md5($key) . '.cache';
 
         $data = [
@@ -82,6 +154,16 @@ class Cache
     {
         self::init();
 
+        if (self::$driver === 'redis' && self::$redis) {
+            try {
+                return (bool) self::$redis->del($key);
+            } catch (\Exception $e) {
+                error_log('Redis delete error: ' . $e->getMessage());
+                return false;
+            }
+        }
+
+        // File cache
         $file = self::$cacheDir . md5($key) . '.cache';
 
         if (file_exists($file)) {
@@ -98,6 +180,16 @@ class Cache
     {
         self::init();
 
+        if (self::$driver === 'redis' && self::$redis) {
+            try {
+                return (bool) self::$redis->flushdb();
+            } catch (\Exception $e) {
+                error_log('Redis clear error: ' . $e->getMessage());
+                return false;
+            }
+        }
+
+        // File cache
         $files = glob(self::$cacheDir . '*.cache');
 
         foreach ($files as $file) {

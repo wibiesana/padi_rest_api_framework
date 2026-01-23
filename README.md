@@ -77,6 +77,18 @@ php -S localhost:8085 -t public
 # Production: FrankenPHP Worker Mode (3-10x faster!)
 frankenphp run
 # See docs/FRANKENPHP_SETUP.md for installation
+
+# Docker - Choose your deployment mode:
+# Standard mode (Development)
+docker compose -f docker-compose.standard.yml up -d
+
+# Worker mode (Production - RECOMMENDED)
+docker compose -f docker-compose.worker.yml up -d
+
+# Full stack with Nginx + SSL
+docker compose -f docker-compose.nginx.yml up -d
+
+# See docs/04-deployment/DOCKER_DEPLOY.md for complete guide
 ```
 
 ### 3. Test API
@@ -109,6 +121,8 @@ curl -X POST http://localhost:8085/auth/login \
 ✅ **Postman Collections** - Auto-generate Postman collections for instant API testing 🎉  
 ✅ **JWT Authentication** - Secure token-based auth  
 ✅ **Database Migrations** - Version control for the database  
+✅ **Redis Cache Support** - High-performance caching with Redis (file cache fallback)  
+✅ **Docker Ready** - FrankenPHP + Worker mode + Nginx + Redis included  
 ✅ **Security Built-in** - SQL injection protection, CORS, rate limiting  
 ✅ **Performance Optimized** - Query caching, gzip compression  
 ✅ **All Frameworks Supported** - Vue, React, Angular, Next.js, Vanilla JS
@@ -117,18 +131,20 @@ curl -X POST http://localhost:8085/auth/login \
 
 ## 📖 DOCUMENTATION
 
-| File                                                             | Description                                                   |
-| ---------------------------------------------------------------- | ------------------------------------------------------------- |
-| **[docs/README.md](docs/README.md)**                             | Complete documentation (core features, deployment, API)       |
-| **[docs/FRONTEND_INTEGRATION.md](docs/FRONTEND_INTEGRATION.md)** | Frontend integration guide (Vue, React, Angular, Next.js etc) |
-| **[docs/frontend-examples.js](docs/frontend-examples.js)**       | Ready-to-use API client examples                              |
-| **[docs/QUICK_START.md](docs/QUICK_START.md)**                   | Quick start guide for init_app.bat                            |
-| **[docs/INIT_APP_GUIDE.md](docs/INIT_APP_GUIDE.md)**             | Complete setup guide with troubleshooting                     |
-| **[docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md)**             | Database setup and multi-database guide                       |
-| **[docs/MULTI_DATABASE.md](docs/MULTI_DATABASE.md)**             | Multi-database usage examples                                 |
-| **[docs/USER_MODEL.md](docs/USER_MODEL.md)**                     | Enhanced User model documentation                             |
-| **[docs/API_TESTING.md](docs/API_TESTING.md)**                   | API testing examples                                          |
-| **[.env.example](.env.example)**                                 | Environment configuration example                             |
+| File                                                                                           | Description                                                   |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| **[docs/README.md](docs/README.md)**                                                           | Complete documentation (core features, deployment, API)       |
+| **[docs/04-deployment/DOCKER_MODE_SELECTION.md](docs/04-deployment/DOCKER_MODE_SELECTION.md)** | 🐳 Choose your Docker deployment mode (Standard/Worker/Nginx) |
+| **[docs/04-deployment/DOCKER_DEPLOY.md](docs/04-deployment/DOCKER_DEPLOY.md)**                 | Complete Docker deployment guide with Redis                   |
+| **[docs/FRONTEND_INTEGRATION.md](docs/FRONTEND_INTEGRATION.md)**                               | Frontend integration guide (Vue, React, Angular, Next.js etc) |
+| **[docs/frontend-examples.js](docs/frontend-examples.js)**                                     | Ready-to-use API client examples                              |
+| **[docs/QUICK_START.md](docs/QUICK_START.md)**                                                 | Quick start guide for init_app.bat                            |
+| **[docs/INIT_APP_GUIDE.md](docs/INIT_APP_GUIDE.md)**                                           | Complete setup guide with troubleshooting                     |
+| **[docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md)**                                           | Database setup and multi-database guide                       |
+| **[docs/MULTI_DATABASE.md](docs/MULTI_DATABASE.md)**                                           | Multi-database usage examples                                 |
+| **[docs/USER_MODEL.md](docs/USER_MODEL.md)**                                                   | Enhanced User model documentation                             |
+| **[docs/API_TESTING.md](docs/API_TESTING.md)**                                                 | API testing examples                                          |
+| **[.env.example](.env.example)**                                                               | Environment configuration example                             |
 
 ---
 
@@ -147,6 +163,17 @@ php scripts/migrate.php rollback
 
 # Development Server
 php -S localhost:8085 -t public
+
+# Docker Deployment
+docker compose -f docker-compose.standard.yml up -d  # Standard + Redis
+docker compose -f docker-compose.worker.yml up -d    # Worker + Redis (FASTEST)
+docker compose -f docker-compose.nginx.yml up -d     # Full stack with Nginx + SSL
+
+docker compose -f docker-compose.worker.yml logs -f  # View logs
+docker compose -f docker-compose.worker.yml exec padi_worker php scripts/test_redis.php  # Test Redis
+
+# Cache Testing
+php scripts/test_redis.php                            # Test cache configuration (file or Redis)
 
 # Generate JWT Secret
 php -r "echo bin2hex(random_bytes(32));"
@@ -207,6 +234,8 @@ Before deploying:
 - [ ] HTTPS enabled
 - [ ] Strong database password
 - [ ] Run `composer install --no-dev --optimize-autoloader`
+- [ ] Set `CACHE_DRIVER=redis` for production (if using Redis)
+- [ ] Configure Redis connection (REDIS_HOST, REDIS_PORT)
 
 ---
 
@@ -224,7 +253,11 @@ chmod 640 .env
 php scripts/migrate.php migrate
 ```
 
-**Deployment guides available at:** [docs/README.md](docs/README.md) (Part 5: Deployment)
+**Deployment Options:**
+
+- **Docker (Recommended):** See [docs/04-deployment/DOCKER_DEPLOY.md](docs/04-deployment/DOCKER_DEPLOY.md) - Complete guide with Redis, FrankenPHP Worker mode, and Nginx
+- **Manual Deployment:** See [docs/README.md](docs/README.md) (Part 5: Deployment)
+- **Performance:** Use FrankenPHP Worker mode for 10-100x performance boost
 
 ---
 

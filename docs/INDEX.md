@@ -266,6 +266,28 @@ Production-ready deployment and performance optimization.
 - Backup & restore
 - Scaling strategies
 
+**[📄 DOCKER_DEPLOY.md](04-deployment/DOCKER_DEPLOY.md)** ✨ Complete Guide
+
+- 3 deployment modes (Standard/Worker/Nginx)
+- Redis cache configuration
+- Step-by-step setup
+- Production checklist
+- Troubleshooting
+
+**[📄 DOCKER_MODE_SELECTION.md](04-deployment/DOCKER_MODE_SELECTION.md)** ✨ Mode Selection Guide
+
+- Choose deployment mode
+- Performance comparison
+- Quick start commands
+- Best practices
+
+**[📄 REDIS_SETUP.md](04-deployment/REDIS_SETUP.md)** ✨ Redis Configuration
+
+- Redis cache setup
+- File vs Redis comparison
+- Testing guide
+- Performance tips
+
 ### FrankenPHP Worker Mode (3-10x Faster!)
 
 **[📄 FRANKENPHP_SETUP.md](04-deployment/FRANKENPHP_SETUP.md)**

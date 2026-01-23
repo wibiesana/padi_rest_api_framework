@@ -121,12 +121,12 @@ class Product extends BaseProduct
 
     public function getActiveProducts(): array
     {
-        return $this->where(['status' => 'active'])->get();
+        return $this->where(['status' => 'active']);
     }
 
     public function getExpensiveProducts(float $minPrice): array
     {
-        return $this->where(['price >=' => $minPrice])->get();
+        return $this->where(['price >=' => $minPrice]);
     }
 }
 ```
@@ -187,6 +187,35 @@ Automatically manage `created_at` and `updated_at`.
 
 ## Query Methods
 
+### Important: ActiveRecord vs Query Builder
+
+**ActiveRecord methods (`$model->where()`):**
+
+- Return **array** directly
+- Cannot be chained with `->get()`, `->orderBy()`, `->limit()`
+- Simple and convenient for basic queries
+
+**Query Builder (`Query::table()`):**
+
+- Return **Query instance** for method chaining
+- Use `->andWhere()` for multiple conditions
+- Required for complex queries with ordering, limiting, joins
+
+```php
+// ✅ ActiveRecord - returns array directly
+$products = $product->where(['status' => 'active']);
+
+// ✅ Query Builder - for chaining
+$products = Query::table('products')
+    ->where('status', '=', 'active')
+    ->orderBy('price', 'DESC')
+    ->limit(10)
+    ->get();
+
+// ❌ WRONG - where() already returns array
+$products = $product->where(['status' => 'active'])->get();
+```
+
 ### Basic Queries
 
 ```php
@@ -196,20 +225,23 @@ $products = $product->all();
 // Find by ID
 $product = $product->find(1);
 
-// Where conditions
-$active = $product->where(['status' => 'active'])->get();
+// Where conditions (returns array directly)
+$active = $product->where(['status' => 'active']);
 
 // Multiple conditions
 $filtered = $product->where([
     'status' => 'active',
     'price >' => 50
-])->get();
+]);
 
-// Order by
-$sorted = $product->orderBy('price', 'DESC')->get();
+// For ordering and limiting, use Query Builder
+$sorted = Query::table('products')
+    ->orderBy('price', 'DESC')
+    ->get();
 
-// Limit
-$limited = $product->limit(10)->get();
+$limited = Query::table('products')
+    ->limit(10)
+    ->get();
 ```
 
 ### Advanced Queries
@@ -225,13 +257,19 @@ $paginated = $product->paginate($page, $perPage);
 $results = $product->search('laptop');
 
 // Count
-$count = $product->where(['status' => 'active'])->count();
+$count = Query::table('products')
+    ->where('status', '=', 'active')
+    ->count();
 
 // First record
-$first = $product->where(['status' => 'active'])->first();
+$first = Query::table('products')
+    ->where('status', '=', 'active')
+    ->first();
 
 // Exists
-$exists = $product->where(['name' => 'Product'])->exists();
+$exists = Query::table('products')
+    ->where('name', '=', 'Product')
+    ->exists();
 ```
 
 ### Query Builder Integration
@@ -286,7 +324,7 @@ class Category extends BaseCategory
     public function products(): array
     {
         $productModel = new Product();
-        return $productModel->where(['category_id' => $this->id])->get();
+        return $productModel->where(['category_id' => $this->id]);
     }
 }
 ```
@@ -407,7 +445,7 @@ class Product extends BaseProduct
      */
     public function getActive(): array
     {
-        return $this->where(['status' => 'active'])->get();
+        return $this->where(['status' => 'active']);
     }
 
     /**
@@ -415,7 +453,7 @@ class Product extends BaseProduct
      */
     public function getByCategory(int $categoryId): array
     {
-        return $this->where(['category_id' => $categoryId])->get();
+        return $this->where(['category_id' => $categoryId]);
     }
 
     /**
@@ -425,7 +463,7 @@ class Product extends BaseProduct
     {
         return Query::table($this->table)
             ->where('price', '>=', $min)
-            ->where('price', '<=', $max)
+            ->andWhere('price', '<=', $max)
             ->get();
     }
 
@@ -434,7 +472,8 @@ class Product extends BaseProduct
      */
     public function getFeatured(int $limit = 10): array
     {
-        return $this->where(['is_featured' => 1])
+        return Query::table($this->table)
+            ->where('is_featured', '=', 1)
             ->orderBy('created_at', 'DESC')
             ->limit($limit)
             ->get();
@@ -454,15 +493,15 @@ class Product extends BaseProduct
 
         // Apply filters
         if (!empty($filters['category_id'])) {
-            $query->where('category_id', '=', $filters['category_id']);
+            $query->andWhere('category_id', '=', $filters['category_id']);
         }
 
         if (!empty($filters['min_price'])) {
-            $query->where('price', '>=', $filters['min_price']);
+            $query->andWhere('price', '>=', $filters['min_price']);
         }
 
         if (!empty($filters['max_price'])) {
-            $query->where('price', '<=', $filters['max_price']);
+            $query->andWhere('price', '<=', $filters['max_price']);
         }
 
         return $query->get();
@@ -563,7 +602,7 @@ $newProduct = $product->create([
 // READ
 $allProducts = $product->all();
 $oneProduct = $product->find(1);
-$activeProducts = $product->where(['status' => 'active'])->get();
+$activeProducts = $product->where(['status' => 'active']);
 
 // UPDATE
 $updated = $product->update(1, [
