@@ -72,7 +72,7 @@ init_app.bat
 
 ```bash
 # Development: PHP Built-in Server
-php -S localhost:8000 -t public
+php -S localhost:8085 -t public
 
 # Production: FrankenPHP Worker Mode (3-10x faster!)
 frankenphp run
@@ -83,10 +83,10 @@ frankenphp run
 
 ```bash
 # Health check
-curl http://localhost:8000/
+curl http://localhost:8085/
 
 # Register user
-curl -X POST http://localhost:8000/auth/register \
+curl -X POST http://localhost:8085/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Admin",
@@ -96,7 +96,7 @@ curl -X POST http://localhost:8000/auth/register \
   }'
 
 # Login
-curl -X POST http://localhost:8000/auth/login \
+curl -X POST http://localhost:8085/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@example.com","password":"Admin123!"}'
 ```
@@ -145,7 +145,7 @@ php scripts/migrate.php migrate
 php scripts/migrate.php rollback
 
 # Development Server
-php -S localhost:8000 -t public
+php -S localhost:8085 -t public
 
 # Generate JWT Secret
 php -r "echo bin2hex(random_bytes(32));"

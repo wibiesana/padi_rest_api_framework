@@ -244,9 +244,9 @@ echo %GREEN%║                  Setup Completed Successfully!                 �
 echo %GREEN%╚════════════════════════════════════════════════════════════════╝%RESET%
 echo.
 echo %BLUE%Next Steps:%RESET%
-echo   1. Start the server:    %YELLOW%php -S localhost:8000 -t public%RESET%
-echo   2. Visit:               %YELLOW%http://localhost:8000%RESET%
-echo   3. API Documentation:   %YELLOW%http://localhost:8000/docs%RESET%
+echo   1. Start the server:    %YELLOW%php -S localhost:8085 -t public%RESET%
+echo   2. Visit:               %YELLOW%http://localhost:8085%RESET%
+echo   3. API Documentation:   %YELLOW%http://localhost:8085/docs%RESET%
 echo.
 echo %BLUE%Quick Commands:%RESET%
 echo   - List tables:          %YELLOW%php scripts/generate.php list%RESET%

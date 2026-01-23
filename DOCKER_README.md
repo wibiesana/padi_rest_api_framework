@@ -167,7 +167,7 @@ curl http://localhost:8085/
 ```yaml
 # Edit docker-compose.yml
 ports:
-  - "8001:8000" # Ganti 8000 ke 8001
+  - "8001:8085" # Ganti 8000 ke 8001
 ```
 
 **Port 3306 sudah dipakai (full stack):**

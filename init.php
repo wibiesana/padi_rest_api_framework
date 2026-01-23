@@ -317,9 +317,9 @@ try {
     echo PHP_EOL;
 
     echo Colors::colorize("Next Steps:", 'blue') . PHP_EOL;
-    echo "  1. Start the server:    " . Colors::colorize("php -S localhost:8000 -t public", 'yellow') . PHP_EOL;
-    echo "  2. Visit:               " . Colors::colorize("http://localhost:8000", 'yellow') . PHP_EOL;
-    echo "  3. API Documentation:   " . Colors::colorize("http://localhost:8000/docs", 'yellow') . PHP_EOL;
+    echo "  1. Start the server:    " . Colors::colorize("php -S localhost:8085 -t public", 'yellow') . PHP_EOL;
+    echo "  2. Visit:               " . Colors::colorize("http://localhost:8085", 'yellow') . PHP_EOL;
+    echo "  3. API Documentation:   " . Colors::colorize("http://localhost:8085/docs", 'yellow') . PHP_EOL;
     echo PHP_EOL;
 
     echo Colors::colorize("Quick Commands:", 'blue') . PHP_EOL;

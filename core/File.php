@@ -62,7 +62,7 @@ class File
      */
     public static function url(string $path): string
     {
-        $appUrl = Env::get('APP_URL', 'http://localhost:8000');
+        $appUrl = Env::get('APP_URL', 'http://localhost:8085');
         return rtrim($appUrl, '/') . '/' . self::$uploadDir . '/' . ltrim($path, '/');
     }
 }
