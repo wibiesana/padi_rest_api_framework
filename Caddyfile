@@ -1,0 +1,29 @@
+{
+    # Global options
+    admin off
+    auto_https off
+}
+
+# HTTP server - Worker Mode
+:8085 {
+    # Root directory
+    root * /app/public
+
+    # Enable PHP with worker mode for maximum performance
+    php_server {
+        worker /app/public/worker.php
+    }
+
+    # Rewrite all requests to index.php
+    @notFile {
+        not file
+    }
+    rewrite @notFile /index.php
+
+    # Logging
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+}

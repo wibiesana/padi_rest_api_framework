@@ -1,0 +1,122 @@
+version: "3.8"
+
+# Full stack with MySQL and phpMyAdmin
+# Use this if you want everything in Docker
+
+services:
+  # FrankenPHP Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: padi_api_full
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    volumes:
+      # Mount source code for development (hot reload)
+      - .:/app
+      # Persist storage
+      - ./storage:/app/storage
+      # Isolate vendor
+      - /app/vendor
+    environment:
+      # Application
+      - APP_NAME=Padi REST API
+      - APP_ENV=development
+      - APP_DEBUG=true
+      - APP_URL=http://localhost:8085
+
+      # Debug
+      - DEBUG_SHOW_QUERIES=true
+      - ENABLE_COMPRESSION=true
+
+      # Database
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=rest_api_db
+      - DB_USER=api_user
+      - DB_PASS=secret_password
+
+      # JWT
+      - JWT_SECRET=your-64-character-random-secret-here-change-in-production
+      - JWT_ALGORITHM=HS256
+      - JWT_EXPIRY=3600
+
+      # CORS (empty = allow all in development)
+      - CORS_ALLOWED_ORIGINS=
+
+      # Rate Limiting
+      - RATE_LIMIT_MAX=60
+      - RATE_LIMIT_WINDOW=60
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - padi_network
+
+    # Override command to run in standard mode (serving public/index.php)
+    command:
+      ["frankenphp", "php-server", "--listen", ":8085", "--root", "public/"]
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: padi_mysql_full
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=rest_api_db
+      - MYSQL_USER=api_user
+      - MYSQL_PASSWORD=secret_password
+    volumes:
+      # Persist database data
+      - mysql_data:/var/lib/mysql
+      # Import schema on first run
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-proot_password",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - padi_network
+
+  # phpMyAdmin (optional, for database management)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: padi_phpmyadmin_full
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      - PMA_USER=root
+      - PMA_PASSWORD=root_password
+    depends_on:
+      - mysql
+    networks:
+      - padi_network
+
+networks:
+  padi_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local

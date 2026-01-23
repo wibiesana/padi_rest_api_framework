@@ -1,0 +1,27 @@
+{
+    # Global options
+    admin off
+    auto_https off
+}
+
+# HTTP server - Standard Mode
+:8085 {
+    # Root directory
+    root * /app/public
+
+    # Enable PHP (standard mode - no worker)
+    php_server
+
+    # Rewrite all requests to index.php
+    @notFile {
+        not file
+    }
+    rewrite @notFile /index.php
+
+    # Logging
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+}

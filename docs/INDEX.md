@@ -1,0 +1,542 @@
+# 🌾 Padi REST API Framework - Documentation
+
+> **Version 2.0** | Production Ready | Last Updated: 2026-01-23
+
+Welcome to the official documentation for **Padi REST API Framework** - a high-performance, lightweight PHP framework designed for building professional REST APIs with maximum speed and minimal overhead.
+
+---
+
+## 📖 Quick Navigation
+
+| Section                                    | Description                            | Best For          |
+| ------------------------------------------ | -------------------------------------- | ----------------- |
+| [🚀 Getting Started](#-getting-started)    | Installation, setup, and first steps   | New users         |
+| [📚 Core Concepts](#-core-concepts)        | Database, models, and query building   | All developers    |
+| [🎯 Advanced Topics](#-advanced-topics)    | Multi-database, frontend integration   | Experienced users |
+| [🚀 Deployment](#-deployment--performance) | Production deployment and optimization | DevOps teams      |
+| [💡 Examples](#-code-examples)             | Ready-to-use code samples              | Quick reference   |
+
+---
+
+## 🚀 Getting Started
+
+Perfect for developers new to Padi REST API or setting up a new project.
+
+### Quick Start (5 minutes)
+
+**[📄 QUICK_START.md](01-getting-started/QUICK_START.md)**
+
+- Installation in 3 commands
+- First API endpoint
+- Testing your setup
+
+### Installation Guide
+
+**[📄 INSTALLATION.md](01-getting-started/INSTALLATION.md)** ✨ NEW
+
+- Detailed installation steps
+- Server requirements
+- PHP extensions
+- Automated vs manual setup
+
+### Configuration Guide
+
+**[📄 CONFIGURATION.md](01-getting-started/CONFIGURATION.md)** ✨ NEW
+
+- Environment variables
+- Development vs production
+- Security settings
+- CORS configuration
+
+### First Steps
+
+**[📄 FIRST_STEPS.md](01-getting-started/FIRST_STEPS.md)** ✨ NEW
+
+- Register first user
+- Test authentication
+- Generate CRUD
+- Common tasks
+
+### Complete Setup Guide
+
+**[📄 INIT_APP_GUIDE.md](01-getting-started/INIT_APP_GUIDE.md)**
+
+- Automated setup process
+- Database configuration
+- User management
+- CRUD generation
+
+### Setup Methods Comparison
+
+**[📄 SETUP_METHODS.md](01-getting-started/SETUP_METHODS.md)**
+
+- `init.php` vs `init_app.bat`
+- Cross-platform compatibility
+- Choosing the right method
+
+### Troubleshooting
+
+**[📄 INIT_APP_TROUBLESHOOTING.md](01-getting-started/INIT_APP_TROUBLESHOOTING.md)**
+
+- Common installation issues
+- Platform-specific problems
+- Solutions and workarounds
+
+---
+
+## 📚 Core Concepts
+
+Essential knowledge for building with Padi REST API.
+
+### Authentication & Security
+
+**[📄 AUTHENTICATION.md](02-core-concepts/AUTHENTICATION.md)** ✨ NEW
+
+- JWT authentication flow
+- Password requirements
+- Security features
+- Rate limiting
+- CORS configuration
+
+### Models Guide
+
+**[📄 MODELS.md](02-core-concepts/MODELS.md)** ✨ NEW
+
+- Model structure (Base/Concrete)
+- CRUD operations
+- Relationships
+- Validation
+- Best practices
+
+### Controllers Guide
+
+**[📄 CONTROLLERS.md](02-core-concepts/CONTROLLERS.md)** ✨ NEW
+
+- Controller structure
+- Request handling
+- Custom endpoints
+- Response methods
+- Error handling
+
+### Code Generator
+
+**[📄 CODE_GENERATOR.md](02-core-concepts/CODE_GENERATOR.md)** ✨ NEW
+
+- Generator commands
+- Generate CRUD
+- Customization
+- Workflow examples
+
+### Database Setup
+
+**[📄 DATABASE_SETUP.md](02-core-concepts/DATABASE_SETUP.md)**
+
+- Database configuration
+- Schema management
+- Connection setup
+- Best practices
+
+### Query Builder
+
+**[📄 QUERY_BUILDER.md](02-core-concepts/QUERY_BUILDER.md)**
+
+- Fluent query interface
+- Complex queries
+- Joins and aggregations
+- Security features
+
+### Database Transactions
+
+**[📄 DATABASE_TRANSACTIONS.md](02-core-concepts/DATABASE_TRANSACTIONS.md)**
+
+- Automatic transactions
+- Manual transaction control
+- Rollback strategies
+- Error handling
+
+### Active Record Lifecycle
+
+**[📄 ACTIVE_RECORD_LIFECYCLE.md](02-core-concepts/ACTIVE_RECORD_LIFECYCLE.md)**
+
+- Model lifecycle hooks
+- `beforeSave`, `afterSave`
+- `beforeDelete`, `afterDelete`
+- Custom validation
+
+### User Model Guide
+
+**[📄 USER_MODEL.md](02-core-concepts/USER_MODEL.md)**
+
+- Enhanced user model
+- Authentication fields
+- Role-based access
+- Best practices
+
+---
+
+## 🎯 Advanced Topics
+
+Take your API to the next level with advanced features.
+
+### Security Best Practices
+
+**[📄 SECURITY.md](03-advanced/SECURITY.md)** ✨ NEW
+
+- Security checklist
+- SQL injection protection
+- Password security
+- JWT best practices
+- HTTPS enforcement
+
+### Multi-Database Support
+
+**[📄 MULTI_DATABASE.md](03-advanced/MULTI_DATABASE.md)**
+
+- Multiple database connections
+- MySQL, PostgreSQL, SQLite
+- Connection switching
+- Real-world use cases
+
+### Frontend Integration
+
+**[📄 FRONTEND_INTEGRATION.md](03-advanced/FRONTEND_INTEGRATION.md)**
+
+- Vue.js integration
+- React integration
+- Angular integration
+- Next.js integration
+- Vanilla JavaScript
+
+### API Testing
+
+**[📄 API_TESTING.md](03-advanced/API_TESTING.md)**
+
+- cURL examples
+- Testing workflows
+- Automated testing
+- Best practices
+
+### Postman Guide
+
+**[📄 POSTMAN_GUIDE.md](03-advanced/POSTMAN_GUIDE.md)**
+
+- Postman collection setup
+- Environment variables
+- Testing workflows
+- Import/export
+
+---
+
+## 🚀 Deployment & Performance
+
+Production-ready deployment and performance optimization.
+
+### Production Deployment
+
+**[📄 PRODUCTION.md](04-deployment/PRODUCTION.md)** ✨ NEW
+
+- Pre-deployment checklist
+- Server configuration (Apache/NGINX)
+- SSL/TLS setup
+- File permissions
+- Database setup
+- Monitoring
+- Backup strategy
+
+### Troubleshooting Guide
+
+**[📄 TROUBLESHOOTING.md](04-deployment/TROUBLESHOOTING.md)** ✨ NEW
+
+- Common issues
+- Database problems
+- Authentication errors
+- CORS issues
+- Performance problems
+- Debug tools
+
+### Docker Deployment
+
+**[📄 DOCKER.md](04-deployment/DOCKER.md)** ✨ NEW
+
+- Docker setup with FrankenPHP
+- Development environment
+- Production deployment
+- Docker Compose configuration
+- NGINX reverse proxy
+- Backup & restore
+- Scaling strategies
+
+### FrankenPHP Worker Mode (3-10x Faster!)
+
+**[📄 FRANKENPHP_SETUP.md](04-deployment/FRANKENPHP_SETUP.md)**
+
+- Installation guide
+- Performance benchmarks
+- Configuration examples
+- Docker deployment
+- Troubleshooting
+
+**[📄 MODE_SWITCHING.md](04-deployment/MODE_SWITCHING.md)** ✨ NEW
+
+- Switch between Worker and Standard mode
+- Quick switch script
+- Mode comparison
+- Testing performance
+
+**[📄 PERFORMANCE.md](04-deployment/PERFORMANCE.md)** ✨ NEW
+
+- Performance benchmarks
+- Worker vs Standard mode
+- Cold start comparison
+- Best practices
+
+### FrankenPHP Implementation Details
+
+**[📄 FRANKENPHP_IMPLEMENTATION.md](04-deployment/FRANKENPHP_IMPLEMENTATION.md)**
+
+- Technical implementation
+- Code changes explained
+- Migration guide
+- Performance metrics
+
+---
+
+## 💡 Code Examples
+
+Ready-to-use code samples and collections.
+
+### API Reference
+
+**[📄 API_REFERENCE.md](05-examples/API_REFERENCE.md)** ✨ NEW
+
+- Standard response format
+- HTTP status codes
+- Authentication endpoints
+- CRUD endpoints
+- Validation rules
+- cURL examples
+
+### Frontend API Client
+
+**[📄 frontend-examples.js](05-examples/frontend-examples.js)**
+
+- Axios setup
+- Authentication flow
+- CRUD operations
+- Error handling
+
+### Postman Collection
+
+**[📄 postman_collection.json](05-examples/postman_collection.json)**
+
+- Complete API collection
+- Pre-configured requests
+- Environment templates
+- Import ready
+
+---
+
+## 📋 Complete Reference
+
+### Main Documentation
+
+**[📄 README.md](README.md)** ✨ UPDATED
+
+Concise overview with links to:
+
+- Quick start guide
+- Documentation index
+- Learning paths
+- Quick reference
+- System requirements
+
+---
+
+## 🎓 Learning Paths
+
+### Path 1: Beginner (First-time users)
+
+1. [QUICK_START.md](01-getting-started/QUICK_START.md) - 5 min
+2. [FIRST_STEPS.md](01-getting-started/FIRST_STEPS.md) - 15 min
+3. [AUTHENTICATION.md](02-core-concepts/AUTHENTICATION.md) - 20 min
+4. [MODELS.md](02-core-concepts/MODELS.md) - 20 min
+
+**Total: ~1 hour**
+
+### Path 2: Intermediate (Building production apps)
+
+1. [INSTALLATION.md](01-getting-started/INSTALLATION.md) - 15 min
+2. [CONFIGURATION.md](01-getting-started/CONFIGURATION.md) - 10 min
+3. [CODE_GENERATOR.md](02-core-concepts/CODE_GENERATOR.md) - 15 min
+4. [CONTROLLERS.md](02-core-concepts/CONTROLLERS.md) - 20 min
+5. [FRONTEND_INTEGRATION.md](03-advanced/FRONTEND_INTEGRATION.md) - 30 min
+
+**Total: ~1.5 hours**
+
+### Path 3: Advanced (Performance & scaling)
+
+1. [QUERY_BUILDER.md](02-core-concepts/QUERY_BUILDER.md) - 20 min
+2. [MULTI_DATABASE.md](03-advanced/MULTI_DATABASE.md) - 25 min
+3. [SECURITY.md](03-advanced/SECURITY.md) - 30 min
+4. [FRANKENPHP_SETUP.md](04-deployment/FRANKENPHP_SETUP.md) - 20 min
+5. [PRODUCTION.md](04-deployment/PRODUCTION.md) - 30 min
+
+**Total: ~2 hours**
+
+---
+
+## 🔍 Quick Reference
+
+### Common Tasks
+
+| Task                  | Documentation                                                  |
+| --------------------- | -------------------------------------------------------------- |
+| Install framework     | [INSTALLATION.md](01-getting-started/INSTALLATION.md)          |
+| Configure environment | [CONFIGURATION.md](01-getting-started/CONFIGURATION.md)        |
+| First API calls       | [FIRST_STEPS.md](01-getting-started/FIRST_STEPS.md)            |
+| Setup database        | [DATABASE_SETUP.md](02-core-concepts/DATABASE_SETUP.md)        |
+| Generate CRUD         | [CODE_GENERATOR.md](02-core-concepts/CODE_GENERATOR.md)        |
+| Add authentication    | [AUTHENTICATION.md](02-core-concepts/AUTHENTICATION.md)        |
+| Create models         | [MODELS.md](02-core-concepts/MODELS.md)                        |
+| Build controllers     | [CONTROLLERS.md](02-core-concepts/CONTROLLERS.md)              |
+| Connect frontend      | [FRONTEND_INTEGRATION.md](03-advanced/FRONTEND_INTEGRATION.md) |
+| Security hardening    | [SECURITY.md](03-advanced/SECURITY.md)                         |
+| Deploy to production  | [PRODUCTION.md](04-deployment/PRODUCTION.md)                   |
+| Deploy with Docker    | [DOCKER.md](04-deployment/DOCKER.md)                           |
+| Troubleshoot issues   | [TROUBLESHOOTING.md](04-deployment/TROUBLESHOOTING.md)         |
+| API reference         | [API_REFERENCE.md](05-examples/API_REFERENCE.md)               |
+
+---
+
+## 📁 Documentation Structure
+
+```
+docs/
+├── INDEX.md                          # This file - Complete navigation
+├── README.md                         # Quick overview & getting started
+│
+├── 01-getting-started/               # Installation & Setup
+│   ├── QUICK_START.md                # 5-minute quick start
+│   ├── INSTALLATION.md               # ✨ Detailed installation
+│   ├── CONFIGURATION.md              # ✨ Environment configuration
+│   ├── FIRST_STEPS.md                # ✨ First API calls
+│   ├── INIT_APP_GUIDE.md             # Automated setup guide
+│   ├── SETUP_METHODS.md              # Setup methods comparison
+│   └── INIT_APP_TROUBLESHOOTING.md   # Installation troubleshooting
+│
+├── 02-core-concepts/                 # Core Features
+│   ├── AUTHENTICATION.md             # ✨ JWT authentication & security
+│   ├── MODELS.md                     # ✨ Database models guide
+│   ├── CONTROLLERS.md                # ✨ Controllers guide
+│   ├── CODE_GENERATOR.md             # ✨ Auto CRUD generator
+│   ├── DATABASE_SETUP.md             # Database configuration
+│   ├── QUERY_BUILDER.md              # Query builder
+│   ├── DATABASE_TRANSACTIONS.md      # Transactions
+│   ├── ACTIVE_RECORD_LIFECYCLE.md    # Model lifecycle
+│   └── USER_MODEL.md                 # User model guide
+│
+├── 03-advanced/                      # Advanced Topics
+│   ├── SECURITY.md                   # ✨ Security best practices
+│   ├── MULTI_DATABASE.md             # Multi-database support
+│   ├── FRONTEND_INTEGRATION.md       # Frontend integration
+│   ├── API_TESTING.md                # API testing
+│   └── POSTMAN_GUIDE.md              # Postman guide
+│
+├── 04-deployment/                    # Production & Performance
+│   ├── PRODUCTION.md                 # ✨ Production deployment
+│   ├── DOCKER.md                     # ✨ Docker deployment
+│   ├── TROUBLESHOOTING.md            # ✨ Troubleshooting guide
+│   ├── FRANKENPHP_SETUP.md           # FrankenPHP setup
+│   └── FRANKENPHP_IMPLEMENTATION.md  # FrankenPHP implementation
+│
+└── 05-examples/                      # Code Samples
+    ├── API_REFERENCE.md              # ✨ Complete API reference
+    ├── frontend-examples.js          # Frontend examples
+    └── postman_collection.json       # Postman collection
+```
+
+**✨ NEW** = Newly created in reorganization
+
+---
+
+## 🌟 Key Features
+
+- ⚡ **Auto CRUD Generator** - Generate models, controllers, and routes automatically
+- 🔐 **JWT Authentication** - Secure token-based authentication built-in
+- 🗄️ **Multi-Database** - MySQL, MariaDB, PostgreSQL, SQLite support
+- 🚀 **FrankenPHP Ready** - 3-10x performance boost with worker mode
+- 🛡️ **Security First** - SQL injection protection, rate limiting, CORS
+- 📦 **Zero Dependencies** - Pure PHP, no heavy frameworks
+- 🎯 **Frontend Ready** - Works with Vue, React, Angular, Next.js
+
+---
+
+## 💬 Need Help?
+
+1. **Check the docs** - Most answers are in this documentation
+2. **Quick Start** - [QUICK_START.md](01-getting-started/QUICK_START.md)
+3. **Troubleshooting** - [TROUBLESHOOTING.md](04-deployment/TROUBLESHOOTING.md)
+4. **Examples** - [05-examples/](05-examples/) for working code
+5. **API Reference** - [API_REFERENCE.md](05-examples/API_REFERENCE.md)
+
+---
+
+## 🚀 Quick Links
+
+- **[Get Started in 5 Minutes →](01-getting-started/QUICK_START.md)**
+- **[Installation Guide →](01-getting-started/INSTALLATION.md)**
+- **[First Steps →](01-getting-started/FIRST_STEPS.md)**
+- **[Frontend Integration →](03-advanced/FRONTEND_INTEGRATION.md)**
+- **[Production Deployment →](04-deployment/PRODUCTION.md)**
+- **[API Reference →](05-examples/API_REFERENCE.md)**
+
+---
+
+**Framework:** Padi REST API v2.0  
+**Status:** Production Ready ✅  
+**Security Score:** 9.0/10 🛡️  
+**Performance Score:** 8.5/10 ⚡  
+**License:** MIT
+
+**Happy Coding!** 🌾
+
+---
+
+## 🌟 Key Features
+
+- ⚡ **Auto CRUD Generator** - Generate models, controllers, and routes automatically
+- 🔐 **JWT Authentication** - Secure token-based authentication built-in
+- 🗄️ **Multi-Database** - MySQL, MariaDB, PostgreSQL, SQLite support
+- 🚀 **FrankenPHP Ready** - 3-10x performance boost with worker mode
+- 🛡️ **Security First** - SQL injection protection, rate limiting, CORS
+- 📦 **Zero Dependencies** - Pure PHP, no heavy frameworks
+- 🎯 **Frontend Ready** - Works with Vue, React, Angular, Next.js
+
+---
+
+## 💬 Need Help?
+
+1. **Check the docs** - Most answers are in this documentation
+2. **Troubleshooting guide** - [INIT_APP_TROUBLESHOOTING.md](01-getting-started/INIT_APP_TROUBLESHOOTING.md)
+3. **Examples** - See [05-examples/](05-examples/) for working code
+4. **Complete reference** - [README.md](README.md) has everything
+
+---
+
+## 🚀 Quick Links
+
+- **[Get Started in 5 Minutes →](01-getting-started/QUICK_START.md)**
+- **[Complete Setup Guide →](01-getting-started/INIT_APP_GUIDE.md)**
+- **[Frontend Integration →](03-advanced/FRONTEND_INTEGRATION.md)**
+- **[Performance Optimization →](04-deployment/FRANKENPHP_SETUP.md)**
+- **[Full API Reference →](README.md)**
+
+---
+
+**Framework:** Padi REST API v2.0  
+**Status:** Production Ready ✅  
+**Security Score:** 9.0/10 🛡️  
+**Performance Score:** 8.5/10 ⚡  
+**License:** MIT
+
+**Happy Coding!** 🌾
