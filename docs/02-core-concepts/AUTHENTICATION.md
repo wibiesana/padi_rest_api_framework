@@ -1,406 +1,182 @@
-# 🔐 Authentication & Security
+<!--
+  Authentication & Security
+  Improved for beginners: clearer structure, quick-start examples, and troubleshooting.
+-->
 
-**Padi REST API Framework v2.0**
+# Authentication & Security (Beginner Friendly)
+
+This document explains how authentication works in Padi REST API using JSON Web Tokens (JWT). It is written for beginners and includes step-by-step examples, common errors, and troubleshooting tips.
+
+**Quick overview:**
+
+- The app uses JWT for stateless authentication.
+- Clients (web/mobile) authenticate via `/auth/login` or `/auth/register` and receive a token.
+- The token is sent in the `Authorization: Bearer <token>` header on protected requests.
+
+## Table of contents
+
+- Prerequisites
+- Quick start (example requests)
+- Authentication endpoints (register, login, refresh, logout, me)
+- How tokens are validated (server-side)
+- Common errors & troubleshooting
+- Security best practices
 
 ---
 
-## Overview
+## Prerequisites
 
-Padi REST API uses **JWT (JSON Web Tokens)** for stateless authentication, providing secure and scalable user authentication.
+- PHP environment with dependencies installed (`composer install`).
+- `.env` configured with `JWT_SECRET`, `DB_*` and other environment variables.
+- Basic knowledge of HTTP and headers (GET/POST and Authorization header).
 
-### Security Score: 9.0/10 🛡️
+If you do not have `JWT_SECRET` set, generate one:
 
----
-
-## JWT Authentication Flow
-
-### 1. Registration/Login Flow
-
-```
-┌─────────┐                  ┌─────────┐                  ┌──────────┐
-│ Client  │                  │   API   │                  │ Database │
-└────┬────┘                  └────┬────┘                  └────┬─────┘
-     │                            │                            │
-     │  POST /auth/login          │                            │
-     │  {email, password}         │                            │
-     ├───────────────────────────>│                            │
-     │                            │                            │
-     │                            │  Verify credentials        │
-     │                            ├───────────────────────────>│
-     │                            │                            │
-     │                            │  User data                 │
-     │                            │<───────────────────────────┤
-     │                            │                            │
-     │                            │  Generate JWT token        │
-     │                            │                            │
-     │  {token, user}             │                            │
-     │<───────────────────────────┤                            │
-     │                            │                            │
-     │  Store token in            │                            │
-     │  localStorage              │                            │
-     │                            │                            │
-```
-
-### 2. Authenticated Request Flow
-
-```
-┌─────────┐                  ┌─────────┐
-│ Client  │                  │   API   │
-└────┬────┘                  └────┬────┘
-     │                            │
-     │  GET /protected-route      │
-     │  Authorization: Bearer ... │
-     ├───────────────────────────>│
-     │                            │
-     │                            │  Validate JWT token
-     │                            │  - Check signature
-     │                            │  - Check expiry
-     │                            │  - Extract user ID
-     │                            │
-     │  {data}                    │
-     │<───────────────────────────┤
-     │                            │
+```bash
+php -r "echo bin2hex(random_bytes(32));"
 ```
 
 ---
 
-## Authentication Endpoints
+## Quick start (example flows)
 
-### 1. Register New User
+1. Register a new user (example using `curl`):
 
-**Endpoint:** `POST /auth/register`
-
-**Request:**
-
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "SecurePass123!",
-  "password_confirmation": "SecurePass123!"
-}
+```bash
+curl -X POST http://localhost:8085/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John Doe","email":"john@example.com","password":"SecurePass123!","password_confirmation":"SecurePass123!"}'
 ```
 
-**Response:**
+Response (success):
 
 ```json
 {
   "success": true,
   "message": "User registered successfully",
   "data": {
-    "user": {
-      "id": 1,
-      "name": "John Doe",
-      "email": "john@example.com",
-      "created_at": "2026-01-23 09:50:00"
-    },
-    "token": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+    "user": { "id": 1, "name": "John Doe", "email": "john@example.com" },
+    "token": "<JWT_TOKEN_HERE>"
   }
 }
 ```
 
-### 2. Login
+2. Login (get token):
 
-**Endpoint:** `POST /auth/login`
-
-**Request:**
-
-```json
-{
-  "email": "john@example.com",
-  "password": "SecurePass123!"
-}
+```bash
+curl -X POST http://localhost:8085/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john@example.com","password":"SecurePass123!"}'
 ```
 
-**Response:**
+Response:
 
 ```json
 {
   "success": true,
   "message": "Login successful",
   "data": {
-    "token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-    "user": {
-      "id": 1,
-      "name": "John Doe",
-      "email": "john@example.com"
-    }
+    "token": "<JWT_TOKEN>",
+    "user": { "id": 1, "name": "John Doe", "email": "john@example.com" }
   }
 }
 ```
 
-### 3. Get Current User
-
-**Endpoint:** `GET /auth/me`
-
-**Headers:**
-
-```
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...
-```
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "name": "John Doe",
-    "email": "john@example.com",
-    "created_at": "2026-01-23 09:50:00"
-  }
-}
-```
-
-### 4. Logout
-
-**Endpoint:** `POST /auth/logout`
-
-**Headers:**
-
-```
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...
-```
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "message": "Logged out successfully"
-}
-```
-
-### 5. Refresh Token
-
-**Endpoint:** `POST /auth/refresh`
-
-**Headers:**
-
-```
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...
-```
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "token": "eyJ0eXAiOiJKV1QiLCJhbGc..."
-  }
-}
-```
-
----
-
-## Password Requirements
-
-### Validation Rules
-
-New passwords must meet these requirements:
-
-- ✅ **Minimum 8 characters**
-- ✅ **At least 1 uppercase letter** (A-Z)
-- ✅ **At least 1 lowercase letter** (a-z)
-- ✅ **At least 1 number** (0-9)
-- ✅ **At least 1 special character** (@$!%\*?&#)
-
-### Valid Examples
-
-```
-✅ Admin123!
-✅ SecurePass@2024
-✅ MyP@ssw0rd
-✅ Test#User99
-```
-
-### Invalid Examples
-
-```
-❌ password         (no uppercase, number, special char)
-❌ PASSWORD123      (no lowercase, special char)
-❌ Pass1!           (too short)
-❌ MyPassword       (no number, special char)
-```
-
-### Password Hashing
-
-Passwords are hashed using **bcrypt** with cost factor 10:
-
-```php
-// Hashing
-$hashedPassword = password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]);
-
-// Verification
-password_verify($inputPassword, $hashedPassword);
-```
-
----
-
-## JWT Configuration
-
-### Environment Variables
-
-```env
-JWT_SECRET=your-64-character-random-secret-here
-JWT_ALGORITHM=HS256
-JWT_EXPIRY=3600
-```
-
-- **JWT_SECRET**: Secret key for signing tokens (64+ characters)
-- **JWT_ALGORITHM**: Signing algorithm (HS256, HS384, HS512)
-- **JWT_EXPIRY**: Token expiry time in seconds (3600 = 1 hour)
-
-### Generate Strong JWT Secret
+3. Call a protected endpoint (include token in header):
 
 ```bash
-# Method 1: PHP
-php -r "echo bin2hex(random_bytes(32));"
-
-# Method 2: OpenSSL
-openssl rand -hex 32
-
-# Output example:
-# 9a6d4f7ebe57a4ebd702e6108f4e5bd1722fa2812ae4b9ae696ce68739e06b18b
+curl -X GET http://localhost:8085/auth/me \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
----
+Response:
 
-## Security Features
-
-### Implemented Security Measures
-
-| Feature                      | Status | Description                                 |
-| ---------------------------- | ------ | ------------------------------------------- |
-| **SQL Injection Protection** | ✅     | PDO prepared statements + column validation |
-| **XSS Protection**           | ✅     | X-XSS-Protection header                     |
-| **CSRF Protection**          | ✅     | Stateless JWT (no cookies)                  |
-| **Clickjacking Protection**  | ✅     | X-Frame-Options: DENY                       |
-| **MIME Sniffing Protection** | ✅     | X-Content-Type-Options: nosniff             |
-| **Password Hashing**         | ✅     | Bcrypt with cost 10                         |
-| **Rate Limiting**            | ✅     | 60 requests/minute per IP                   |
-| **CORS Whitelist**           | ✅     | Environment-based configuration             |
-| **HTTPS Enforcement**        | ✅     | HSTS header (production)                    |
-| **Input Validation**         | ✅     | Required for all endpoints                  |
-
-### Security Headers
-
-Automatically added to all responses:
-
-```
-X-Frame-Options: DENY
-X-Content-Type-Options: nosniff
-X-XSS-Protection: 1; mode=block
-Strict-Transport-Security: max-age=31536000; includeSubDomains
-```
-
----
-
-## Rate Limiting
-
-### Configuration
-
-```env
-RATE_LIMIT_MAX=60
-RATE_LIMIT_WINDOW=60
-```
-
-- **RATE_LIMIT_MAX**: Maximum requests allowed
-- **RATE_LIMIT_WINDOW**: Time window in seconds
-
-### Default Limits
-
-- **60 requests per minute** per IP address
-- Applies to all endpoints
-- Returns `429 Too Many Requests` when exceeded
-
-### Rate Limit Headers
-
-```
-X-RateLimit-Limit: 60
-X-RateLimit-Remaining: 45
-X-RateLimit-Reset: 1706000000
-```
-
-### Bypass Rate Limiting (Development)
-
-Set in `.env`:
-
-```env
-APP_ENV=development
-RATE_LIMIT_MAX=1000
-```
-
----
-
-## CORS Configuration
-
-### Development Setup
-
-```env
-APP_ENV=development
-CORS_ALLOWED_ORIGINS=
-```
-
-**Empty value = Allow all origins** (for local development)
-
-### Production Setup
-
-```env
-APP_ENV=production
-CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
-```
-
-**Comma-separated list** of allowed origins
-
-### CORS Headers
-
-```
-Access-Control-Allow-Origin: https://yourdomain.com
-Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
-Access-Control-Allow-Headers: Content-Type, Authorization
-Access-Control-Max-Age: 86400
-```
-
----
-
-## Using Authentication in Controllers
-
-### Protect Routes
-
-Routes in `routes/api.php`:
-
-```php
-// Public routes
-$router->post('/auth/register', [AuthController::class, 'register']);
-$router->post('/auth/login', [AuthController::class, 'login']);
-
-// Protected routes (require authentication)
-$router->get('/auth/me', [AuthController::class, 'me']);
-$router->get('/products', [ProductController::class, 'index']);
-$router->post('/products', [ProductController::class, 'store']);
-```
-
-### Get Current User in Controller
-
-```php
-class ProductController extends BaseController
+```json
 {
-    public function index(): void
-    {
-        // Get authenticated user
-        $user = $this->getAuthUser();
-
-        // User is automatically available if route is protected
-        $userId = $user['id'];
-        $userName = $user['name'];
-
-        // Your logic here
-    }
+  "success": true,
+  "data": { "id": 1, "name": "John Doe", "email": "john@example.com" }
 }
 ```
+
+---
+
+## Authentication endpoints (details)
+
+All endpoints expect and return JSON. Replace `http://localhost:8085` with your `APP_URL`.
+
+- `POST /auth/register` — Register a new user. Required: `name`, `email`, `password`, `password_confirmation`.
+- `POST /auth/login` — Authenticate and retrieve token. Required: `email`, `password`.
+- `GET /auth/me` — Get current authenticated user. Requires `Authorization` header.
+- `POST /auth/logout` — Invalidate token (implementation may remove token from server-side blacklist if used).
+- `POST /auth/refresh` — Exchange an expiring token for a new one.
+
+Example request/response are shown in the Quick Start section above.
+
+---
+
+## How JWT tokens are validated (server-side)
+
+When a protected endpoint is called, the server does the following:
+
+1. Read `Authorization` header and extract the token (format: `Bearer <token>`).
+2. Verify the token signature using `JWT_SECRET` and algorithm (e.g., HS256).
+3. Check token expiry (`exp` claim).
+4. Extract user ID or user claims from token payload.
+5. Optionally validate user still exists in database.
+
+If any check fails, the server returns `401 Unauthorized` with an error message.
+
+---
+
+## Password rules & hashing
+
+- Minimum requirements (default): 8 chars, uppercase, lowercase, number, special character.
+- Passwords are hashed using `password_hash(..., PASSWORD_BCRYPT)` before storage.
+
+Example (PHP):
+
+```php
+$hashed = password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]);
+if (!password_verify($input, $hashed)) {
+    // invalid password
+}
+```
+
+---
+
+## Common errors & troubleshooting
+
+- `401 Unauthorized` — Token missing, invalid, or expired. Check `Authorization` header and token expiry.
+- `422 Unprocessable Entity` — Validation failed (e.g., invalid email, weak password). See response for validation messages.
+- `429 Too Many Requests` — Rate limit exceeded. Increase `RATE_LIMIT_MAX` in `.env` for development or wait until reset.
+
+Troubleshooting checklist:
+
+1. Ensure `.env` has `JWT_SECRET` and `JWT_ALGORITHM` set.
+2. Confirm time on server and client are synchronized (token expiry depends on server time).
+3. For local Docker development, use `APP_URL` and ports in `.env` correctly.
+
+---
+
+## Security best practices (short)
+
+- Keep `JWT_SECRET` secret and long (use `openssl rand -hex 32`).
+- Use HTTPS in production so tokens are not exposed over the network.
+- Prefer short token TTLs and implement refresh logic if needed.
+- Use Redis or DB blacklist if you need immediate token revocation on logout.
+
+---
+
+## Where to go next
+
+- See `docs/02-core-concepts/MODELS.md` for user model examples.
+- See `docs/04-deployment/REDIS_SETUP.md` for using Redis as cache and token blacklist (optional).
+
+If you want, I can now apply the same beginner-friendly template to other core docs — tell me which folder to proceed with next (e.g., `02-core-concepts`, `04-deployment`).
+}
+}
+
+````
 
 ---
 
@@ -417,7 +193,7 @@ const response = await api.post("/auth/login", {
 
 // Store token
 localStorage.setItem("access_token", response.data.token);
-```
+````
 
 ### Send Token with Requests
 
