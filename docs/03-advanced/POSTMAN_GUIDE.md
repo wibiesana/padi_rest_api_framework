@@ -1,52 +1,288 @@
-# 📮 Postman Collection - Quick Start Guide
+# 📮 Postman Collections Guide
 
-## Import Collection ke Postman
-
-### Method 1: Direct Import
-
-1. Buka Postman
-2. Click **Import** button (top left)
-3. Drag & drop file `postman_collection.json`
-4. Collection akan muncul di sidebar
-
-### Method 2: Import from File
-
-1. Buka Postman
-2. Click **Import** → **File** → **Upload Files**
-3. Pilih `postman_collection.json`
-4. Click **Import**
+Panduan lengkap penggunaan Postman Collections untuk testing API Padi REST Framework.
 
 ---
 
-## 🎯 Collection Overview
+## 📦 Cara Menggunakan
 
-Collection ini berisi **semua CRUD endpoints** untuk framework:
+### 1. Generate Postman Collection
 
-| Folder             | Endpoints  | Auth Required   |
-| ------------------ | ---------- | --------------- |
-| **Authentication** | 4 requests | No (except /me) |
-| **Users**          | 5 requests | Yes\*           |
-| **Posts**          | 5 requests | Yes\*           |
-| **Tags**           | 5 requests | Yes\*           |
-| **Comments**       | 6 requests | Yes\*           |
-| **Post Tags**      | 3 requests | Yes\*           |
+Saat Anda menjalankan generate CRUD, Postman collection akan otomatis dibuat:
 
-\*GET requests tidak perlu auth, POST/PUT/DELETE perlu auth
+```bash
+php scripts/generate.php crud products --write
+```
 
-**Total:** 28 requests siap pakai!
+Output akan menampilkan:
+
+```
+1. Generating Model...
+✓ Base ActiveRecord Product created/updated
+✓ ActiveRecord Product created successfully
+
+2. Generating Controller...
+✓ Base Controller ProductController created/updated
+✓ Controller ProductController created successfully
+
+3. Generating Routes...
+✓ Routes for 'products' automatically appended to routes/api.php
+
+4. Generating Postman Collection...
+✓ Postman Collection created at /path/to/postman/product_api_collection.json
+  Import this file to Postman to test the API endpoints
+```
+
+### 2. Import ke Postman
+
+1. Buka aplikasi Postman
+2. Klik **Import** di pojok kiri atas
+3. Pilih file `.json` dari folder `postman/`:
+   - **`auth_api_collection.json`** - Authentication endpoints (Login, Register, Get Me, Forgot/Reset Password)
+   - **`*_api_collection.json`** - Resource endpoints (auto-generated)
+4. Collection akan muncul di sidebar Postman Anda
+
+### 3. Setup Environment Variables
+
+Collection menggunakan 2 variable:
+
+- `{{base_url}}` - URL base aplikasi Anda (default: `http://localhost:8000`)
+- `{{token}}` - Bearer token untuk autentikasi (kosong secara default)
+
+**Cara set variable:**
+
+1. Di Postman, klik nama collection
+2. Pilih tab **Variables**
+3. Update nilai `base_url` sesuai server Anda
+4. Update nilai `token` dengan token hasil login
+
+### 4. Testing API
+
+Setiap collection berisi endpoint standar CRUD:
+
+✅ **GET** - Get All (Paginated) - `GET /resource?page=1&per_page=10`
+✅ **GET** - Search - `GET /resource?search=keyword`
+✅ **GET** - Get All (No Pagination) - `GET /resource/all`
+✅ **GET** - Get Single - `GET /resource/1`
+✅ **POST** - Create (Protected) - `POST /resource`
+✅ **PUT** - Update (Protected) - `PUT /resource/1`
+✅ **DELETE** - Delete (Protected) - `DELETE /resource/1`
+
+Endpoint dengan label **(Protected)** memerlukan Authentication token.
+
+**Authentication Collection:**
+
+✅ **POST** - Register - `POST /auth/register`
+✅ **POST** - Login - `POST /auth/login`
+✅ **GET** - Get Me (Protected) - `GET /auth/me`
+✅ **POST** - Logout (Protected) - `POST /auth/logout`
+✅ **POST** - Forgot Password - `POST /auth/forgot-password`
+✅ **POST** - Reset Password - `POST /auth/reset-password`
 
 ---
 
-## 🚀 Quick Start Workflow
+## 🔐 Mendapatkan Authentication Token
 
-### Step 1: Register User
+**Otomatis (Recommended):**
+
+1. Import collection `auth_api_collection.json`
+2. Jalankan request **Register** atau **Login**
+3. Token akan otomatis disimpan ke variable `{{token}}` (via Test Script)
+4. Gunakan untuk request protected endpoints
+
+**Manual:**
+
+1. Jalankan request **POST /auth/register** atau **POST /auth/login**
+2. Copy token dari response
+3. Paste token ke variable `{{token}}` di Collection Variables
+4. Token akan otomatis ditambahkan ke header protected endpoints:
+   ```
+   Authorization: Bearer {{token}}
+   ```
+
+---
+
+## 📝 Sample Request Body
+
+Setiap request POST/PUT sudah dilengkapi dengan sample data berdasarkan schema database:
+
+```json
+{
+  "name": "Sample Name",
+  "email": "user@example.com",
+  "description": "This is a sample description",
+  "price": 99.99,
+  "status": "active"
+}
+```
+
+Edit sesuai kebutuhan Anda.
+
+---
+
+## 🚀 Tips
+
+1. **Generate untuk semua table sekaligus:**
+
+   ```bash
+   php scripts/generate.php crud-all --write
+   ```
+
+   Ini akan membuat collection untuk semua table di database.
+
+2. **Organize collections:**
+   - Import semua collections
+   - Buat Folder di Postman untuk mengelompokkan
+   - Gunakan Workspace untuk project berbeda
+
+3. **Share dengan team:**
+   - Export collection dari Postman
+   - Commit ke Git repository
+   - Team bisa import langsung
+
+4. **Update collection:**
+   - Jika schema berubah, jalankan generate ulang
+   - File akan di-overwrite dengan data terbaru
+   - Import ulang ke Postman
+
+---
+
+## 📁 File Naming Convention
+
+File collection menggunakan format:
 
 ```
-POST /auth/register
+{model_name}_api_collection.json
 ```
 
-- Otomatis save token ke variable
-- Otomatis save user_id
+Contoh:
+
+- `auth_api_collection.json` - Authentication endpoints (manual/provided)
+- `product_api_collection.json` - Auto-generated
+- `user_api_collection.json` - Auto-generated
+- `category_api_collection.json` - Auto-generated
+
+---
+
+## 🎯 Contoh Workflow
+
+```bash
+# 1. Import Auth Collection
+# File: postman/auth_api_collection.json
+
+# 2. Register atau Login
+# Request: POST {{base_url}}/auth/login
+# Token akan otomatis tersimpan di {{token}} variable
+
+# 3. Test Get Me
+# Request: GET {{base_url}}/auth/me
+# Token otomatis terkirim via Authorization header
+
+# 4. Generate CRUD + Postman Collection untuk resource
+php scripts/generate.php crud products --write
+
+# 5. Import file postman/product_api_collection.json ke Postman
+
+# 6. Set base_url di Collection Variables (jika berbeda)
+# base_url = http://localhost:8000
+
+# 7. Test endpoint GET All Products
+# Request: GET {{base_url}}/products
+
+# 8. Test protected endpoint Create Product
+# Request: POST {{base_url}}/products
+# Authorization: Bearer {{token}} (otomatis dari variable)
+```
+
+---
+
+## 🔧 Customization
+
+Jika ingin customize collection, edit method `generatePostmanCollection()` di file:
+
+```
+core/Generator.php
+```
+
+Anda bisa mengubah:
+
+- Sample data generation
+- Endpoint structure
+- Variable names
+- Test scripts
+
+---
+
+## ⚙️ Advanced: Generate All Collections
+
+```bash
+# Generate CRUD untuk semua table + Postman collections
+php scripts/generate.php crud-all --write
+
+# Hasilnya:
+# - Model, Controller, Routes untuk semua table
+# - Postman collection untuk setiap table di folder postman/
+```
+
+---
+
+## 🎨 Collection Features
+
+### Auto-Save Token
+
+Login dan Register endpoints dilengkapi dengan Test Script yang otomatis menyimpan token:
+
+```javascript
+// Auto-save token from response
+if (pm.response.code === 200) {
+  var jsonData = pm.response.json();
+  if (jsonData.data && jsonData.data.token) {
+    pm.collectionVariables.set("token", jsonData.data.token);
+    console.log("Token saved:", jsonData.data.token);
+  }
+}
+```
+
+### Protected Endpoints
+
+Endpoint yang memerlukan authentication otomatis include Bearer token di header:
+
+```
+Authorization: Bearer {{token}}
+```
+
+### Sample Data
+
+Semua POST/PUT requests sudah include sample data yang smart-generated berdasarkan:
+
+- Column names (email, phone, name, etc)
+- Data types (int, varchar, decimal, etc)
+- Database constraints
+
+---
+
+## 📖 Collection Structure
+
+```
+postman/
+├── README.md                              # Panduan lengkap (moved to docs/)
+├── auth_api_collection.json              # Authentication endpoints
+├── example_product_api_collection.json   # Example Product API
+└── *_api_collection.json                 # Auto-generated collections
+```
+
+---
+
+## 🔗 Related Documentation
+
+- [Code Generator Guide](../02-core-concepts/CODE_GENERATOR.md) - Generate CRUD + Collections
+- [API Testing](API_TESTING.md) - Complete API testing guide
+- [Authentication](../02-core-concepts/AUTHENTICATION.md) - Auth implementation details
+- [Password Reset](PASSWORD_RESET.md) - Forgot/Reset password feature
+
+---
+
+**Happy Testing! 🎉**
 
 ### Step 2: Login (Optional)
 

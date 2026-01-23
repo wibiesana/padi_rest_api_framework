@@ -160,13 +160,13 @@ The generator intelligently creates sample request bodies based on your database
 
 ```
 postman/
-├── README.md                      # Complete usage guide
+├── README.md                      # Quick reference (redirects to docs)
 ├── product_api_collection.json    # Product endpoints
 ├── user_api_collection.json       # User endpoints
 └── category_api_collection.json   # Category endpoints
 ```
 
-See [postman/README.md](../../postman/README.md) for detailed usage guide.
+See [Postman Guide](../03-advanced/POSTMAN_GUIDE.md) for detailed usage guide.
 
 ---
 

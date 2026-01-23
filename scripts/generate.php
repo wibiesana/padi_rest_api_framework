@@ -90,7 +90,7 @@ function printHelp()
     echo "  ✓ Automatically generated for each CRUD\n";
     echo "  ✓ Saved to postman/ folder\n";
     echo "  ✓ Import to Postman for instant API testing\n";
-    echo "  ✓ See postman/README.md for usage guide\n\n";
+    echo "  ✓ See docs/03-advanced/POSTMAN_GUIDE.md for usage guide\n\n";
 }
 
 function listTables()

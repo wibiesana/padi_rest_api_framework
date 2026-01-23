@@ -156,7 +156,7 @@ php -r "echo bin2hex(random_bytes(32));"
 
 - Import from `postman/` folder to Postman
 - Ready-to-use API testing collections
-- See [postman/README.md](postman/README.md) for guide
+- See [Postman Guide](docs/03-advanced/POSTMAN_GUIDE.md) for complete guide
 
 ---
 
