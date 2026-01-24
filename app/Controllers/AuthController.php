@@ -79,39 +79,35 @@ class AuthController extends Controller
 
         // Determine if login is email or username
         $isEmail = filter_var($validated['username'], FILTER_VALIDATE_EMAIL);
+        $field = $isEmail ? 'email' : 'username';
 
-        // Find active user by email or username
-        if ($isEmail) {
-            $user = $this->model->findActiveByEmail($validated['username']);
-            $field = 'email';
-        } else {
-            $user = $this->model->findActiveByUsername($validated['username']);
-            $field = 'username';
-        }
-
-        if (!$user) {
-            $this->unauthorized('Invalid credentials or account is inactive');
-        }
-
-        // Get user with password for verification
+        // Get user with password in one query
         $stmt = $this->model->query(
             "SELECT * FROM users WHERE {$field} = :{$field}",
             [$field => $validated['username']]
         );
 
-        $userWithPassword = $stmt[0] ?? null;
+        $user = $stmt[0] ?? null;
 
-        if (!$userWithPassword || !password_verify($validated['password'], $userWithPassword['password'])) {
+        // Check if user exists
+        if (!$user) {
+            $this->unauthorized('Invalid credentials or account is inactive');
+        }
+
+        // Verify password
+        if (!password_verify($validated['password'], $user['password'])) {
             $this->unauthorized('Invalid credentials');
         }
 
         // Check user status
-        if (!$this->model->isActive($userWithPassword)) {
+        if ($user['status'] !== 'active') {
             $this->unauthorized('Your account is inactive. Please contact support.');
         }
 
         // Update last login
+        $now = date('Y-m-d H:i:s');
         $this->model->updateLastLogin($user['id']);
+        $user['last_login_at'] = $now; // Update in memory to avoid extra query
 
         // Check if remember me is requested
         $rememberMe = isset($validated['remember_me']) &&
@@ -132,10 +128,11 @@ class AuthController extends Controller
         if ($rememberMe) {
             $rememberToken = $this->model->generateRememberToken();
             $this->model->setRememberToken($user['id'], $rememberToken);
+            $user['remember_token'] = $rememberToken; // Update in memory
         }
 
-        // Refresh user data with updated last_login_at
-        $user = $this->model->find($user['id']);
+        // Remove password from response
+        unset($user['password']);
 
         $response = [
             'user' => $user,

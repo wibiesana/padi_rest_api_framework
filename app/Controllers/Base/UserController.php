@@ -70,10 +70,9 @@ class UserController extends Controller
     public function store(): void
     {
         $validated = $this->validate([
-            'name' => 'required|max:100',
+            'username' => 'max:50|unique:users,username',
             'email' => 'required|max:255|email|unique:users,email',
             'password' => 'required|max:255',
-            'phone' => 'max:20',
             'role' => 'max:50',
             'status' => 'max:20',
             'email_verified_at' => 'email',
@@ -102,10 +101,9 @@ class UserController extends Controller
         }
         
         $validated = $this->validate([
-            'name' => 'required|max:100',
+            'username' => 'max:50|unique:users,username,' . $id,
             'email' => 'required|max:255|email|unique:users,email,' . $id,
             'password' => 'required|max:255',
-            'phone' => 'max:20',
             'role' => 'max:50',
             'status' => 'max:20',
             'email_verified_at' => 'email',

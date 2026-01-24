@@ -10,7 +10,7 @@ class User extends ActiveRecord
     protected string $primaryKey = 'id';
     
     protected array $fillable = [
-        'name', 'email', 'password', 'phone', 'avatar', 'role', 'status', 'email_verified_at', 'remember_token', 'last_login_at'
+        'username', 'email', 'password', 'role', 'status', 'email_verified_at', 'remember_token', 'last_login_at'
     ];
     
     protected array $hidden = ['password'];
@@ -23,7 +23,7 @@ class User extends ActiveRecord
         $searchTerm = "%$keyword%";
         
         $sql = "SELECT * FROM {$this->table} 
-                WHERE name LIKE :keyword
+                WHERE username LIKE :keyword
                    OR email LIKE :keyword2
                    OR status LIKE :keyword3
                    OR email_verified_at LIKE :keyword4
