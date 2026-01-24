@@ -46,8 +46,8 @@ class Email
             $mail->send();
             return true;
         } catch (Exception $e) {
-            if (Debug::isEnabled()) {
-                Debug::log("Email failed to send: " . $mail->ErrorInfo, 'error');
+            if (Env::get('APP_DEBUG') === 'true') {
+                error_log("Email failed to send: " . $mail->ErrorInfo);
             }
             Logger::error("Email failed to send", ['error' => $mail->ErrorInfo, 'to' => $to]);
             return false;

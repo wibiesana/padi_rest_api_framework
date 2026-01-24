@@ -228,31 +228,50 @@ class Generator
 
         return $auditColumns;
     }
-    
+
     /**
      * Detect timestamp format based on column type (INT = unix, DATETIME/TIMESTAMP = datetime)
      */
     private function detectTimestampFormat(string $tableName): string
     {
         $schema = $this->getTableSchema($tableName);
-        
+
         // Check created_at or updated_at column type
         foreach (['created_at', 'updated_at'] as $col) {
             if (isset($schema[$col])) {
                 $type = strtolower($schema[$col]['Type'] ?? '');
-                
+
                 // Check if it's an integer type
                 if (strpos($type, 'int') !== false || strpos($type, 'bigint') !== false) {
                     return 'unix';
                 }
-                
+
                 // Default to datetime for DATETIME, TIMESTAMP, etc.
                 return 'datetime';
             }
         }
-        
+
         return 'datetime'; // Default fallback
     }
+
+    /**
+     * Get full table schema from database
+     */
+    private function getTableSchema(string $tableName): array
+    {
+        try {
+            $db = Database::getInstance()->getConnection();
+            $stmt = $db->query("DESCRIBE {$tableName}");
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            $schema = [];
+            foreach ($rows as $row) {
+                $schema[$row['Field']] = $row;
+            }
+            return $schema;
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 
     /**
@@ -354,7 +373,7 @@ class Generator
 
         if (!empty($auditColumns)) {
             $timestampFormat = $this->detectTimestampFormat($tableName);
-            
+
             $auditConfig = "\n    /**\n";
             $auditConfig .= "     * Audit fields detected: " . implode(', ', $auditColumns) . "\n";
             $auditConfig .= "     * These will be auto-populated by ActiveRecord\n";
@@ -367,6 +386,11 @@ class Generator
             $auditConfig .= "     * 'unix' = integer timestamp (INT/BIGINT columns)\n";
             $auditConfig .= "     */\n";
             $auditConfig .= "    protected string \$timestampFormat = '{$timestampFormat}';\n";
+        }
+
+        // Generate smart search query using fillable columns
+        // Only use likely text columns for search
+        $searchableColumns = [];
         $textColumnKeywords = ['name', 'title', 'description', 'content', 'email', 'username', 'category', 'type', 'status', 'code', 'sku'];
 
         foreach ($fillable as $column) {
