@@ -182,6 +182,14 @@ class Validator
     private function checkUnique(string $table, string $column, $value): bool
     {
         try {
+            // Validate table and column names to prevent SQL injection
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $table)) {
+                throw new \InvalidArgumentException("Invalid table name: {$table}");
+            }
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $column)) {
+                throw new \InvalidArgumentException("Invalid column name: {$column}");
+            }
+
             $db = Database::getInstance()->getConnection();
             $stmt = $db->prepare("SELECT COUNT(*) as count FROM {$table} WHERE {$column} = :value");
             $stmt->execute(['value' => $value]);
@@ -189,6 +197,10 @@ class Validator
 
             return $result['count'] > 0;
         } catch (\Exception $e) {
+            // Log error in debug mode
+            if (Env::get('APP_DEBUG') === 'true') {
+                error_log("Validator checkUnique error: " . $e->getMessage());
+            }
             return false;
         }
     }

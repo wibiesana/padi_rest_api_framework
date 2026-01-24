@@ -28,14 +28,16 @@ class AuthController extends Controller
             'password_confirmation' => 'required'
         ]);
 
+        // Validate password confirmation matches
+        if ($validated['password'] !== $validated['password_confirmation']) {
+            $this->error('Password confirmation does not match', 422, [
+                'password_confirmation' => ['Password confirmation must match password']
+            ]);
+        }
+
         // Additional password complexity validation
         if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]/', $validated['password'])) {
             $this->error('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&#)', 422);
-        }
-
-        // Check password confirmation
-        if ($validated['password'] !== $validated['password_confirmation']) {
-            $this->error('Password confirmation does not match', 422);
         }
 
         unset($validated['password_confirmation']);
@@ -81,6 +83,11 @@ class AuthController extends Controller
         $isEmail = filter_var($validated['username'], FILTER_VALIDATE_EMAIL);
         $field = $isEmail ? 'email' : 'username';
 
+        // Whitelist field name to prevent SQL injection
+        if (!in_array($field, ['email', 'username'], true)) {
+            $this->unauthorized('Invalid credentials');
+        }
+
         // Get user with password in one query
         $stmt = $this->model->query(
             "SELECT * FROM users WHERE {$field} = :{$field}",
@@ -89,19 +96,14 @@ class AuthController extends Controller
 
         $user = $stmt[0] ?? null;
 
-        // Check if user exists
-        if (!$user) {
-            $this->unauthorized('Invalid credentials or account is inactive');
-        }
-
-        // Verify password
-        if (!password_verify($validated['password'], $user['password'])) {
+        // Use consistent error message to prevent timing attacks
+        if (!$user || !password_verify($validated['password'], $user['password'])) {
             $this->unauthorized('Invalid credentials');
         }
 
         // Check user status
         if ($user['status'] !== 'active') {
-            $this->unauthorized('Your account is inactive. Please contact support.');
+            $this->unauthorized('Invalid credentials');
         }
 
         // Update last login
@@ -206,10 +208,12 @@ class AuthController extends Controller
         ], 365 * 24 * 60 * 60);
 
         // Update last login
+        $now = date('Y-m-d H:i:s');
         $this->model->updateLastLogin($user['id']);
+        $user['last_login_at'] = $now; // Update in memory to avoid extra query
 
-        // Refresh user data
-        $user = $this->model->find($user['id']);
+        // Remove password from response
+        unset($user['password']);
 
         $this->success([
             'user' => $user,

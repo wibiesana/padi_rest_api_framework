@@ -17,12 +17,12 @@ $router->get('/', function () {
 
 // Authentication routes (public)
 $router->group(['prefix' => 'auth'], function ($router) {
-    $router->post('/register', 'AuthController@register');
-    $router->post('/login', 'AuthController@login');
+    $router->post('/register', 'AuthController@register')->middleware('RateLimitMiddleware');
+    $router->post('/login', 'AuthController@login')->middleware('RateLimitMiddleware');
     $router->post('/refresh', 'AuthController@refresh');
     $router->post('/logout', 'AuthController@logout');
-    $router->post('/forgot-password', 'AuthController@forgotPassword');
-    $router->post('/reset-password', 'AuthController@resetPassword');
+    $router->post('/forgot-password', 'AuthController@forgotPassword')->middleware('RateLimitMiddleware');
+    $router->post('/reset-password', 'AuthController@resetPassword')->middleware('RateLimitMiddleware');
     $router->get('/me', 'AuthController@me')->middleware('AuthMiddleware');
 });
 
@@ -38,7 +38,7 @@ $router->group(['prefix' => 'users', 'middleware' => ['AuthMiddleware']], functi
 
 
 // comments routes
-$router->group(['prefix' => 'comments'], function($router) {
+$router->group(['prefix' => 'comments'], function ($router) {
     $router->get('/', 'CommentController@index');
     $router->get('/all', 'CommentController@all');
     $router->get('/{id}', 'CommentController@show');
@@ -49,7 +49,7 @@ $router->group(['prefix' => 'comments'], function($router) {
 
 
 // jobs routes
-$router->group(['prefix' => 'jobs'], function($router) {
+$router->group(['prefix' => 'jobs'], function ($router) {
     $router->get('/', 'JobController@index');
     $router->get('/all', 'JobController@all');
     $router->get('/{id}', 'JobController@show');
@@ -60,7 +60,7 @@ $router->group(['prefix' => 'jobs'], function($router) {
 
 
 // migrations routes
-$router->group(['prefix' => 'migrations'], function($router) {
+$router->group(['prefix' => 'migrations'], function ($router) {
     $router->get('/', 'MigrationController@index');
     $router->get('/all', 'MigrationController@all');
     $router->get('/{id}', 'MigrationController@show');
@@ -70,8 +70,11 @@ $router->group(['prefix' => 'migrations'], function($router) {
 });
 
 
-// password_resets routes
-$router->group(['prefix' => 'password_resets'], function($router) {
+// passwordresets routes - DISABLED FOR SECURITY
+// Password reset tokens should only be accessed via /auth/forgot-password and /auth/reset-password
+// Uncomment only for debugging purposes in development environment
+/*
+$router->group(['prefix' => 'passwordresets'], function ($router) {
     $router->get('/', 'PasswordResetController@index');
     $router->get('/all', 'PasswordResetController@all');
     $router->get('/{id}', 'PasswordResetController@show');
@@ -79,10 +82,11 @@ $router->group(['prefix' => 'password_resets'], function($router) {
     $router->put('/{id}', 'PasswordResetController@update')->middleware('AuthMiddleware');
     $router->delete('/{id}', 'PasswordResetController@destroy')->middleware('AuthMiddleware');
 });
+*/
 
 
 // post_tags routes
-$router->group(['prefix' => 'post_tags'], function($router) {
+$router->group(['prefix' => 'post_tags'], function ($router) {
     $router->get('/', 'PostTagController@index');
     $router->get('/all', 'PostTagController@all');
     $router->get('/{id}', 'PostTagController@show');
@@ -93,7 +97,7 @@ $router->group(['prefix' => 'post_tags'], function($router) {
 
 
 // posts routes
-$router->group(['prefix' => 'posts'], function($router) {
+$router->group(['prefix' => 'posts'], function ($router) {
     $router->get('/', 'PostController@index');
     $router->get('/all', 'PostController@all');
     $router->get('/{id}', 'PostController@show');
@@ -104,7 +108,7 @@ $router->group(['prefix' => 'posts'], function($router) {
 
 
 // tags routes
-$router->group(['prefix' => 'tags'], function($router) {
+$router->group(['prefix' => 'tags'], function ($router) {
     $router->get('/', 'TagController@index');
     $router->get('/all', 'TagController@all');
     $router->get('/{id}', 'TagController@show');

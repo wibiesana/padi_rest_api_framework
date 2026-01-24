@@ -78,7 +78,11 @@ function printHelp()
     echo "  --write               Auto-append routes to routes/api.php\n";
     echo "  --protected=all       Protect all routes (require auth)\n";
     echo "  --protected=none      No protected routes\n";
-    echo "  --middleware=Auth     Add middleware to routes\n\n";
+    echo "  --middleware=Auth     Add middleware to routes\n";
+    echo "  --force               Force regenerate protected tables (not recommended)\n\n";
+    echo Colors::\$yellow . "Protected Tables (Auto-skipped):\n" . Colors::\$reset;
+    echo "  • users, password_resets, migrations\n";
+    echo "  These tables have custom logic and won't be regenerated.\n\n";
     echo "Examples:\n";
     echo "  php generate.php crud categories --write\n";
     echo "  php generate.php crud-all --overwrite --write\n";
@@ -213,11 +217,26 @@ switch ($command) {
             $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
             echo Colors::$yellow . "Starting CRUD generation for " . count($tables) . " tables...\n" . Colors::$reset;
+            echo "Protected tables will be skipped automatically.\n";
             echo str_repeat('=', 60) . "\n";
 
-            foreach ($tables as $table) {
-                echo "\n> Processing table: " . Colors::$green . $table . Colors::$reset . "\n";
-                $generator->generateCrud($table, $options);
+            $generated = 0;
+            $skipped = 0;
+            
+            foreach (\$tables as \$table) {
+                echo "\n> Processing table: " . Colors::\$green . \$table . Colors::\$reset . "\n";
+                $result = \$generator->generateCrud(\$table, \$options);
+                if ($result) {
+                    $generated++;
+                } else {
+                    $skipped++;
+                }
+            }
+            
+            echo "\n" . str_repeat('=', 60) . "\n";
+            echo Colors::\$green . "Generated: {$generated} tables\n" . Colors::\$reset;
+            if ($skipped > 0) {
+                echo Colors::\$yellow . "Skipped: {$skipped} protected tables\n" . Colors::\$reset;
             }
 
             echo "\n" . Colors::$green . "SUCCESS: CRUD generation for all tables completed!" . Colors::$reset . "\n";

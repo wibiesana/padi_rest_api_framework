@@ -57,23 +57,9 @@ class Request
             $this->body = $_POST;
         }
 
-        // Sanitize all inputs
-        $this->sanitize($this->query);
-        $this->sanitize($this->body);
-    }
-
-    /**
-     * Sanitize input data to prevent XSS
-     */
-    private function sanitize(array &$data): void
-    {
-        foreach ($data as $key => &$value) {
-            if (is_array($value)) {
-                $this->sanitize($value);
-            } elseif (is_string($value)) {
-                $value = htmlspecialchars(strip_tags($value), ENT_QUOTES, 'UTF-8');
-            }
-        }
+        // Note: Input sanitization removed - use output encoding instead
+        // Passwords, JSON data, and HTML content should not be stripped at input
+        // Use htmlspecialchars() when outputting to HTML, not on input
     }
 
     /**
@@ -235,9 +221,41 @@ class Request
 
     /**
      * Get client IP address
+     * Supports X-Forwarded-For for proxy/CDN (e.g., Cloudflare, nginx)
      */
     public function ip(): string
     {
-        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        // Check for proxy headers (trust these only if behind a known proxy)
+        $headers = [
+            'HTTP_CF_CONNECTING_IP', // Cloudflare
+            'HTTP_X_FORWARDED_FOR',  // Standard proxy header
+            'HTTP_X_REAL_IP',        // Nginx proxy
+            'REMOTE_ADDR'            // Direct connection
+        ];
+
+        foreach ($headers as $header) {
+            if (!empty($_SERVER[$header])) {
+                $ip = $_SERVER[$header];
+
+                // X-Forwarded-For can contain multiple IPs (client, proxy1, proxy2)
+                // Take the first one (original client)
+                if (strpos($ip, ',') !== false) {
+                    $ips = explode(',', $ip);
+                    $ip = trim($ips[0]);
+                }
+
+                // Validate IP format
+                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                    return $ip;
+                }
+
+                // If validation fails but IP exists, return it anyway (might be private network)
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
+            }
+        }
+
+        return '0.0.0.0';
     }
 }

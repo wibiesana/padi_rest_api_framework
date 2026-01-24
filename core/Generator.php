@@ -12,9 +12,27 @@ class Generator
 {
     private string $baseDir;
 
+    /**
+     * Protected tables that should not be auto-generated
+     * These are core tables with custom logic
+     */
+    private array $protectedTables = [
+        'users',
+        'password_resets',
+        'migrations'
+    ];
+
     public function __construct()
     {
         $this->baseDir = dirname(__DIR__);
+    }
+
+    /**
+     * Check if table is protected
+     */
+    private function isProtectedTable(string $tableName): bool
+    {
+        return in_array(strtolower($tableName), $this->protectedTables);
     }
 
     /**
@@ -22,6 +40,13 @@ class Generator
      */
     public function generateModel(string $tableName, array $options = []): bool
     {
+        // Skip protected tables unless force flag is set
+        if ($this->isProtectedTable($tableName) && !($options['force'] ?? false)) {
+            echo "⚠️  Table '{$tableName}' is protected. Skipping model generation.\n";
+            echo "   Use --force flag to regenerate (not recommended).\n";
+            return false;
+        }
+
         $modelName = $this->tableNameToModelName($tableName);
         $namespace = $options['namespace'] ?? 'App\\Models';
         $baseNamespace = $namespace . '\\Base';
@@ -69,6 +94,14 @@ class Generator
      */
     public function generateController(string $modelName, array $options = []): bool
     {
+        // Check if this is a protected model
+        $tableName = $this->modelNameToTableName($modelName);
+        if ($this->isProtectedTable($tableName) && !($options['force'] ?? false)) {
+            echo "⚠️  Model '{$modelName}' is for protected table. Skipping controller generation.\n";
+            echo "   Use --force flag to regenerate (not recommended).\n";
+            return false;
+        }
+
         $controllerName = $modelName . 'Controller';
         $namespace = $options['namespace'] ?? 'App\\Controllers';
         $baseNamespace = $namespace . '\\Base';
@@ -129,6 +162,14 @@ class Generator
      */
     public function generateCrud(string $tableName, array $options = []): bool
     {
+        // Skip protected tables unless force flag is set
+        if ($this->isProtectedTable($tableName) && !($options['force'] ?? false)) {
+            echo "⚠️  Table '{$tableName}' is a protected core table. Skipping CRUD generation.\n";
+            echo "   Protected tables: " . implode(', ', $this->protectedTables) . "\n";
+            echo "   Use --force flag to regenerate (not recommended).\n\n";
+            return false;
+        }
+
         echo "Generating CRUD for table: {$tableName}\n";
         echo str_repeat('=', 60) . "\n\n";
 
