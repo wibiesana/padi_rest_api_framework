@@ -1,0 +1,202 @@
+{
+    "info": {
+        "name": "PostTag API",
+        "description": "REST API endpoints for PostTag resource",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "0"
+    },
+    "item": [
+        {
+            "name": "Get All PostTags (Paginated)",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/post_tags?page=1&per_page=10",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "",
+                        "post_tags"
+                    ],
+                    "query": [
+                        {
+                            "key": "page",
+                            "value": "1"
+                        },
+                        {
+                            "key": "per_page",
+                            "value": "10"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Search PostTags",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/post_tags?search=keyword",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "",
+                        "post_tags"
+                    ],
+                    "query": [
+                        {
+                            "key": "search",
+                            "value": "keyword"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get All PostTags (No Pagination)",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/post_tags/all",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "",
+                        "post_tags",
+                        "all"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Single PostTag",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/post_tags/1",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "",
+                        "post_tags",
+                        "1"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Create PostTag",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"post_id\": 1,\n    \"tag_id\": 1\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/post_tags",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "",
+                        "post_tags"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Update PostTag",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"post_id\": 1,\n    \"tag_id\": 1\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/post_tags/1",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "",
+                        "post_tags",
+                        "1"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Delete PostTag",
+            "request": {
+                "method": "DELETE",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/post_tags/1",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "",
+                        "post_tags",
+                        "1"
+                    ]
+                }
+            },
+            "response": []
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8085",
+            "type": "string"
+        },
+        {
+            "key": "token",
+            "value": "",
+            "type": "string"
+        }
+    ]
+}

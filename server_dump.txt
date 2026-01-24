@@ -1,0 +1,24 @@
+Array
+(
+    [DOCUMENT_ROOT] => D:\work\my_code\padi_rest_api-main\public
+    [REMOTE_ADDR] => ::1
+    [REMOTE_PORT] => 49923
+    [SERVER_SOFTWARE] => PHP/8.4.14 (Development Server)
+    [SERVER_PROTOCOL] => HTTP/1.1
+    [SERVER_NAME] => localhost
+    [SERVER_PORT] => 8085
+    [REQUEST_URI] => /auth/login
+    [REQUEST_METHOD] => POST
+    [SCRIPT_NAME] => /index.php
+    [SCRIPT_FILENAME] => D:\work\my_code\padi_rest_api-main\public\index.php
+    [PATH_INFO] => /auth/login
+    [PHP_SELF] => /index.php/auth/login
+    [HTTP_HOST] => localhost:8085
+    [CONTENT_TYPE] => application/json
+    [HTTP_CONTENT_TYPE] => application/json
+    [HTTP_ACCEPT] => */*
+    [CONTENT_LENGTH] => 85
+    [HTTP_CONTENT_LENGTH] => 85
+    [REQUEST_TIME_FLOAT] => 1769221027.7046
+    [REQUEST_TIME] => 1769221027
+)

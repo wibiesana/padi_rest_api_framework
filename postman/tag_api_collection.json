@@ -1,0 +1,202 @@
+{
+    "info": {
+        "name": "Tag API",
+        "description": "REST API endpoints for Tag resource",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "0"
+    },
+    "item": [
+        {
+            "name": "Get All Tags (Paginated)",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/tags?page=1&per_page=10",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "",
+                        "tags"
+                    ],
+                    "query": [
+                        {
+                            "key": "page",
+                            "value": "1"
+                        },
+                        {
+                            "key": "per_page",
+                            "value": "10"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Search Tags",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/tags?search=keyword",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "",
+                        "tags"
+                    ],
+                    "query": [
+                        {
+                            "key": "search",
+                            "value": "keyword"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get All Tags (No Pagination)",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/tags/all",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "",
+                        "tags",
+                        "all"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Single Tag",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/tags/1",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "",
+                        "tags",
+                        "1"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Create Tag",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"name\": \"Sample Name\",\n    \"slug\": \"sample text\",\n    \"description\": \"This is a sample description\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/tags",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "",
+                        "tags"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Update Tag",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"name\": \"Sample Name\",\n    \"slug\": \"sample text\",\n    \"description\": \"This is a sample description\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/tags/1",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "",
+                        "tags",
+                        "1"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Delete Tag",
+            "request": {
+                "method": "DELETE",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/tags/1",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "",
+                        "tags",
+                        "1"
+                    ]
+                }
+            },
+            "response": []
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8085",
+            "type": "string"
+        },
+        {
+            "key": "token",
+            "value": "",
+            "type": "string"
+        }
+    ]
+}

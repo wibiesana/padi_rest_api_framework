@@ -32,6 +32,11 @@ class Response
      */
     public function json($data, int $statusCode = 200): void
     {
+        // Prevent sending multiple responses
+        if (headers_sent()) {
+            return;
+        }
+
         $this->status($statusCode);
         $this->header('Content-Type', 'application/json');
 
@@ -90,6 +95,10 @@ class Response
      */
     public function text(string $data, int $code = 200): void
     {
+        if (headers_sent()) {
+            return;
+        }
+
         $this->statusCode = $code;
         $this->header('Content-Type', 'text/plain');
         $this->sendHeaders();
@@ -103,6 +112,10 @@ class Response
      */
     public function html(string $data, int $code = 200): void
     {
+        if (headers_sent()) {
+            return;
+        }
+
         $this->statusCode = $code;
         $this->header('Content-Type', 'text/html');
         $this->sendHeaders();
@@ -136,6 +149,10 @@ class Response
      */
     public function redirect(string $url, int $code = 302): void
     {
+        if (headers_sent()) {
+            return;
+        }
+
         $this->statusCode = $code;
         $this->header('Location', $url);
         $this->sendHeaders();
@@ -147,6 +164,11 @@ class Response
      */
     private function sendHeaders(): void
     {
+        // Check if headers were already sent
+        if (headers_sent()) {
+            return;
+        }
+
         http_response_code($this->statusCode);
 
         // Security Headers

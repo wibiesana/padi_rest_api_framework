@@ -9,16 +9,16 @@
     # Root directory
     root * /app/public
 
-    # Enable PHP with worker mode for maximum performance
+    # Enable PHP with FrankenPHP worker mode for maximum performance
     php_server {
-        worker /app/public/worker.php
+        worker /app/public/worker.php 10
     }
 
-    # Rewrite all requests to index.php
-    @notFile {
-        not file
-    }
-    rewrite @notFile /index.php
+    # Enable file server for static assets
+    file_server
+
+    # Encode responses
+    encode gzip
 
     # Logging
     log {

@@ -44,13 +44,13 @@ RUN composer install --no-scripts --no-autoloader
 # Copy application files
 COPY . .
 
+# Copy Caddyfile configurations to /etc/caddy
+RUN cp Caddyfile /etc/caddy/Caddyfile && \
+    cp Caddyfile.standard /etc/caddy/Caddyfile.standard && \
+    cp Caddyfile.worker /etc/caddy/Caddyfile.worker
+
 # Generate optimized autoloader AFTER copying all files
 RUN composer dump-autoload --optimize
-
-# Copy both Caddyfile versions
-COPY Caddyfile.standard /etc/caddy/Caddyfile.standard
-COPY Caddyfile.worker /etc/caddy/Caddyfile.worker
-COPY Caddyfile /etc/caddy/Caddyfile
 
 # Create storage directories and set permissions
 RUN mkdir -p storage/cache storage/cache/ratelimit storage/logs \
@@ -79,11 +79,13 @@ RUN composer install --no-dev --no-scripts --no-autoloader --optimize-autoloader
 # Copy application files
 COPY . .
 
+# Copy Caddyfile configurations to /etc/caddy
+RUN cp Caddyfile /etc/caddy/Caddyfile && \
+    cp Caddyfile.standard /etc/caddy/Caddyfile.standard && \
+    cp Caddyfile.worker /etc/caddy/Caddyfile.worker
+
 # Generate optimized autoloader for production
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
-
-# Copy Caddyfile
-COPY Caddyfile /etc/caddy/Caddyfile
 
 # Create storage directories and set permissions
 RUN mkdir -p storage/cache storage/cache/ratelimit storage/logs \

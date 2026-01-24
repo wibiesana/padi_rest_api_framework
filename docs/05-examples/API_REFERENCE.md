@@ -93,10 +93,17 @@ All API responses follow a consistent JSON structure.
 
 ```json
 {
-  "email": "john@example.com",
-  "password": "SecurePass123!"
+  "username": "john@example.com",
+  "password": "SecurePass123!",
+  "remember_me": "true"
 }
 ```
+
+**Parameters:**
+
+- `username` (required): Email or username
+- `password` (required): User password
+- `remember_me` (optional): Set to `"true"`, `"1"`, `"yes"`, or `"on"` for extended session (365 days). Default session is 1 hour.
 
 **Response (200):**
 

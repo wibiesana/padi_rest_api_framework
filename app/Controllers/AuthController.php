@@ -72,20 +72,20 @@ class AuthController extends Controller
     public function login(): void
     {
         $validated = $this->validate([
-            'login' => 'required', // Can be email or username
+            'username' => 'required', // Can be email or username
             'password' => 'required',
             'remember_me' => '' // Optional
         ]);
 
         // Determine if login is email or username
-        $isEmail = filter_var($validated['login'], FILTER_VALIDATE_EMAIL);
+        $isEmail = filter_var($validated['username'], FILTER_VALIDATE_EMAIL);
 
         // Find active user by email or username
         if ($isEmail) {
-            $user = $this->model->findActiveByEmail($validated['login']);
+            $user = $this->model->findActiveByEmail($validated['username']);
             $field = 'email';
         } else {
-            $user = $this->model->findActiveByUsername($validated['login']);
+            $user = $this->model->findActiveByUsername($validated['username']);
             $field = 'username';
         }
 
@@ -96,7 +96,7 @@ class AuthController extends Controller
         // Get user with password for verification
         $stmt = $this->model->query(
             "SELECT * FROM users WHERE {$field} = :{$field}",
-            [$field => $validated['login']]
+            [$field => $validated['username']]
         );
 
         $userWithPassword = $stmt[0] ?? null;
@@ -118,7 +118,7 @@ class AuthController extends Controller
             in_array(strtolower($validated['remember_me']), ['true', '1', 'yes', 'on']);
 
         // Set token expiration based on remember me
-        $expiration = $rememberMe ? (365 * 24 * 60 * 60) : null; // 365 days (1 year) for mobile apps
+        $expiration = $rememberMe ? (365 * 24 * 60 * 60) : 3600; // 365 days (1 year) for mobile apps, 1 hour default
 
         $token = \Core\Auth::generateToken([
             'user_id' => $user['id'],

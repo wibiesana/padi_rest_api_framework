@@ -1,11 +1,11 @@
 version: "3.8"
 
-# DEFAULT DEPLOYMENT: All Services (Development)
-# For production, use specific compose files:
+# Development docker-compose.yml - FrankenPHP Standard + Redis
+# Simple setup for local development
+# For production deployment, use specific compose files:
 #   docker compose -f docker-compose.standard.yml up -d  # Standard mode + Redis
 #   docker compose -f docker-compose.worker.yml up -d    # Worker mode + Redis (fastest)
 #   docker compose -f docker-compose.nginx.yml up -d     # Full stack with Nginx + Redis
-# See docs/04-deployment/DOCKER_MODE_SELECTION.md for detailed guide
 
 services:
   # FrankenPHP Application - Standard (HTTP) mode
@@ -17,7 +17,7 @@ services:
     container_name: padi_app
     restart: unless-stopped
     ports:
-      - "8085:8085" # internal FrankenPHP port
+      - "8085:8085"
     volumes:
       - .:/app
       - ./storage:/app/storage
@@ -26,7 +26,7 @@ services:
       - APP_NAME=Padi REST API
       - APP_ENV=development
       - APP_DEBUG=true
-      - APP_URL=http://localhost
+      - APP_URL=http://localhost:8085
 
       - DEBUG_SHOW_QUERIES=true
       - ENABLE_COMPRESSION=true
@@ -57,58 +57,7 @@ services:
       - padi_network
     depends_on:
       - redis
-    # Use standard Caddyfile (non-worker)
     command: ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile.standard"]
-
-  # FrankenPHP Worker (long-running worker mode)
-  padi_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    container_name: padi_worker
-    restart: unless-stopped
-    volumes:
-      - .:/app
-      - ./storage:/app/storage
-      - /app/vendor
-    environment:
-      - APP_NAME=Padi REST API
-      - APP_ENV=development
-      - APP_DEBUG=true
-
-      - CACHE_DRIVER=redis
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-
-      - DB_HOST=host.docker.internal
-      - DB_PORT=3306
-      - DB_NAME=rest_api_db
-      - DB_USER=root
-      - DB_PASS=
-    networks:
-      - padi_network
-    depends_on:
-      - redis
-    # Use worker Caddyfile (enables worker PHP handler)
-    command: ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile.worker"]
-
-  # Nginx reverse proxy - name represents its role
-  padi_nginx:
-    image: nginx:stable-alpine
-    container_name: padi_nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
-      - ./storage:/app/storage:ro
-    depends_on:
-      - padi_app
-    networks:
-      - padi_network
 
   # Redis for cache/session/rate-limit
   redis:
