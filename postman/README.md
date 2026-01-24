@@ -10,9 +10,12 @@ For complete usage guide of Postman Collections, see:
 
 ## 📁 Files
 
-- `auth_api_collection.json` - Authentication endpoints
-- `example_product_api_collection.json` - Example collection
-- `*_api_collection.json` - Auto-generated collections
+### Core Collections (Required)
+
+These collections are for built-in functionality and should exist before others:
+
+- `auth_api_collection.json` - Authentication endpoints (Login, Register, Password Reset)
+- `user_api_collection.json` - User management endpoints
 
 ## 🚀 Quick Start
 
