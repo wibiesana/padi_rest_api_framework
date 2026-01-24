@@ -29,6 +29,7 @@ abstract class Controller
             $this->response->json([
                 'success' => false,
                 'message' => 'Validation failed',
+                'message_code' => 'VALIDATION_FAILED',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -49,9 +50,17 @@ abstract class Controller
      */
     protected function success($data = null, string $message = 'Success', int $code = 200): void
     {
+        $messageCode = match ($code) {
+            200 => 'SUCCESS',
+            201 => 'CREATED',
+            204 => 'NO_CONTENT',
+            default => 'SUCCESS'
+        };
+
         $this->response->json([
             'success' => true,
             'message' => $message,
+            'message_code' => $messageCode,
             'data' => $data
         ], $code);
     }
@@ -59,11 +68,25 @@ abstract class Controller
     /**
      * Return error response
      */
-    protected function error(string $message = 'Error', int $code = 400, mixed $errors = null): void
+    protected function error(string $message = 'Error', int $code = 400, mixed $errors = null, ?string $messageCode = null): void
     {
+        if ($messageCode === null) {
+            $messageCode = match ($code) {
+                400 => 'BAD_REQUEST',
+                401 => 'UNAUTHORIZED',
+                403 => 'FORBIDDEN',
+                404 => 'NOT_FOUND',
+                422 => 'VALIDATION_FAILED',
+                429 => 'RATE_LIMIT_EXCEEDED',
+                500 => 'INTERNAL_SERVER_ERROR',
+                default => 'ERROR'
+            };
+        }
+
         $response = [
             'success' => false,
-            'message' => $message
+            'message' => $message,
+            'message_code' => $messageCode
         ];
 
         if ($errors !== null) {
@@ -84,9 +107,9 @@ abstract class Controller
     /**
      * Return unauthorized response
      */
-    protected function unauthorized(string $message = 'Unauthorized'): void
+    protected function unauthorized(string $message = 'Unauthorized', ?string $messageCode = null): void
     {
-        $this->error($message, 401);
+        $this->error($message, 401, null, $messageCode);
     }
 
     /**
@@ -95,5 +118,68 @@ abstract class Controller
     protected function forbidden(string $message = 'Forbidden'): void
     {
         $this->error($message, 403);
+    }
+
+    /**
+     * Check if current user has specific role
+     */
+    protected function hasRole(string $role): bool
+    {
+        return $this->request->user && $this->request->user->role === $role;
+    }
+
+    /**
+     * Check if current user has any of the specified roles
+     */
+    protected function hasAnyRole(array $roles): bool
+    {
+        return $this->request->user && in_array($this->request->user->role, $roles, true);
+    }
+
+    /**
+     * Require specific role or throw forbidden error
+     */
+    protected function requireRole(string $role, ?string $message = null): void
+    {
+        if (!$this->hasRole($role)) {
+            $this->forbidden($message ?? "Only {$role}s can access this resource");
+        }
+    }
+
+    /**
+     * Require any of the specified roles or throw forbidden error
+     */
+    protected function requireAnyRole(array $roles, ?string $message = null): void
+    {
+        if (!$this->hasAnyRole($roles)) {
+            $roleList = implode(', ', $roles);
+            $this->forbidden($message ?? "Only {$roleList} can access this resource");
+        }
+    }
+
+    /**
+     * Check if current user is the owner of the resource
+     */
+    protected function isOwner(int $resourceUserId): bool
+    {
+        return $this->request->user && $this->request->user->user_id == $resourceUserId;
+    }
+
+    /**
+     * Check if current user is admin
+     */
+    protected function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    /**
+     * Require admin role or resource owner
+     */
+    protected function requireAdminOrOwner(int $resourceUserId, ?string $message = null): void
+    {
+        if (!$this->isAdmin() && !$this->isOwner($resourceUserId)) {
+            $this->forbidden($message ?? 'You can only access your own resources');
+        }
     }
 }

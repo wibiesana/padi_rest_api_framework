@@ -182,7 +182,8 @@ class Router
         $response = new Response();
         $response->json([
             'success' => false,
-            'message' => 'Route not found'
+            'message' => 'Route not found',
+            'message_code' => 'ROUTE_NOT_FOUND'
         ], 404);
     }
 

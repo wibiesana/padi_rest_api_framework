@@ -85,7 +85,7 @@ class AuthController extends Controller
 
         // Whitelist field name to prevent SQL injection
         if (!in_array($field, ['email', 'username'], true)) {
-            $this->unauthorized('Invalid credentials');
+            $this->unauthorized('Invalid credentials', 'INVALID_CREDENTIALS');
         }
 
         // Get user with password in one query
@@ -98,12 +98,12 @@ class AuthController extends Controller
 
         // Use consistent error message to prevent timing attacks
         if (!$user || !password_verify($validated['password'], $user['password'])) {
-            $this->unauthorized('Invalid credentials');
+            $this->unauthorized('Invalid credentials', 'INVALID_CREDENTIALS');
         }
 
         // Check user status
         if ($user['status'] !== 'active') {
-            $this->unauthorized('Invalid credentials');
+            $this->unauthorized('Invalid credentials', 'INVALID_CREDENTIALS');
         }
 
         // Update last login

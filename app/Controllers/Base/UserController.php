@@ -70,9 +70,7 @@ class UserController extends Controller
     public function store(): void
     {
         // Authorization: Only admin can create users
-        if (!$this->request->user || $this->request->user->role !== 'admin') {
-            $this->forbidden('Only administrators can create users');
-        }
+        $this->requireRole('admin', 'Only administrators can create users');
 
         $validated = $this->validate([
             'username' => 'max:50|unique:users,username',
@@ -106,17 +104,8 @@ class UserController extends Controller
             $this->notFound('User not found');
         }
 
-        // Authorization: Users can only update their own profile, admins can update anyone
-        if (!$this->request->user) {
-            $this->unauthorized('Authentication required');
-        }
-
-        $isAdmin = $this->request->user->role === 'admin';
-        $isOwnProfile = $this->request->user->user_id == $id;
-
-        if (!$isAdmin && !$isOwnProfile) {
-            $this->forbidden('You can only update your own profile');
-        }
+        // Authorization: Admin or owner can update
+        $this->requireAdminOrOwner((int)$user['id']);
 
         $validated = $this->validate([
             'username' => 'max:50|unique:users,username,' . $id,
@@ -127,7 +116,7 @@ class UserController extends Controller
         ]);
 
         // Non-admin users cannot change role or status
-        if (!$isAdmin) {
+        if (!$this->isAdmin()) {
             unset($validated['role'], $validated['status']);
         }
 
@@ -154,9 +143,7 @@ class UserController extends Controller
     public function destroy(): void
     {
         // Authorization: Only admin can delete users
-        if (!$this->request->user || $this->request->user->role !== 'admin') {
-            $this->forbidden('Only administrators can delete users');
-        }
+        $this->requireRole('admin', 'Only administrators can delete users');
 
         $id = $this->request->param('id');
         $user = $this->model->find($id);
@@ -166,8 +153,8 @@ class UserController extends Controller
         }
 
         // Prevent deleting yourself
-        if ($this->request->user->user_id == $id) {
-            $this->error('You cannot delete your own account', 400);
+        if ($this->isOwner((int)$user['id'])) {
+            $this->error('You cannot delete your own account', 400, null, 'CANNOT_DELETE_SELF');
         }
 
         $this->model->delete($id);

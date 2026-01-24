@@ -48,7 +48,8 @@ class RateLimitMiddleware
             $response = new Response();
             $response->json([
                 'success' => false,
-                'message' => 'Too many requests. Please try again later.'
+                'message' => 'Too many requests. Please try again later.',
+                'message_code' => 'RATE_LIMIT_EXCEEDED'
             ], 429);
         }
 

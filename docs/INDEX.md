@@ -178,6 +178,16 @@ Essential knowledge for building with Padi REST API.
 
 Take your API to the next level with advanced features.
 
+### Error Handling & Message Codes
+
+**[📄 ERROR_HANDLING.md](03-advanced/ERROR_HANDLING.md)** ✨ NEW
+
+- Complete message code reference
+- Error response structure
+- Frontend error handling
+- Custom error codes
+- Best practices
+
 ### Security Best Practices
 
 **[📄 SECURITY.md](03-advanced/SECURITY.md)** ✨ NEW

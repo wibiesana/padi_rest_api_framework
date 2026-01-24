@@ -61,7 +61,8 @@ set_exception_handler(function ($exception) use ($config) {
 
     $error = [
         'success' => false,
-        'message' => 'Internal Server Error'
+        'message' => 'Internal Server Error',
+        'message_code' => 'INTERNAL_SERVER_ERROR'
     ];
 
     if ($config['app_debug']) {

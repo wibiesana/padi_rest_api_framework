@@ -1,4 +1,4 @@
-# 🌾 Padi REST API Framework v2.0
+# 🌾 Padi REST API Framework v1.0.0
 
 🌱 Why I Built Padi REST API Framework
 
@@ -20,7 +20,7 @@ Simple. Fast. Secure. 🌾
 - 🛠️ **Dev-Friendly:** Modern features like Database Migrations and a fluent Query Builder.
 - ⚙️ **FrankenPHP Ready:** Worker mode support for 3-10x performance boost in production.
 
-**Version:** 2.0  
+**Version:** 1.0.0  
 **Status:** Production Ready ✅  
 **Security Score:** 9.0/10 🛡️  
 **Performance Score:** 8.5/10 ⚡
@@ -143,6 +143,7 @@ curl -X POST http://localhost:8085/auth/login \
 | **[docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md)**                                           | Database setup and multi-database guide                       |
 | **[docs/MULTI_DATABASE.md](docs/MULTI_DATABASE.md)**                                           | Multi-database usage examples                                 |
 | **[docs/USER_MODEL.md](docs/USER_MODEL.md)**                                                   | Enhanced User model documentation                             |
+| **[docs/03-advanced/ERROR_HANDLING.md](docs/03-advanced/ERROR_HANDLING.md)**                   | Error handling & message codes guide                          |
 | **[docs/API_TESTING.md](docs/API_TESTING.md)**                                                 | API testing examples                                          |
 | **[.env.example](.env.example)**                                                               | Environment configuration example                             |
 
@@ -296,6 +297,109 @@ CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080,http://localhos
 
 Remove or restrict these origins in production and list only trusted domains.
 
+---
+
+## 📋 MESSAGE CODES
+
+All API responses now include a `message_code` field for easier error identification and handling in your frontend application.
+
+### Success Codes
+
+| Code         | HTTP Status | Description                              |
+| ------------ | ----------- | ---------------------------------------- |
+| `SUCCESS`    | 200         | Request successful                       |
+| `CREATED`    | 201         | Resource created successfully            |
+| `NO_CONTENT` | 204         | Request successful, no content to return |
+
+### Error Codes
+
+| Code                    | HTTP Status | Description                                     |
+| ----------------------- | ----------- | ----------------------------------------------- |
+| `VALIDATION_FAILED`     | 422         | Request validation failed                       |
+| `BAD_REQUEST`           | 400         | Invalid request                                 |
+| `UNAUTHORIZED`          | 401         | Authentication required                         |
+| `INVALID_CREDENTIALS`   | 401         | Login failed - wrong username/email or password |
+| `NO_TOKEN_PROVIDED`     | 401         | No authentication token provided                |
+| `INVALID_TOKEN`         | 401         | Invalid or expired token                        |
+| `FORBIDDEN`             | 403         | Access denied                                   |
+| `NOT_FOUND`             | 404         | Resource not found                              |
+| `ROUTE_NOT_FOUND`       | 404         | API endpoint not found                          |
+| `RATE_LIMIT_EXCEEDED`   | 429         | Too many requests                               |
+| `INTERNAL_SERVER_ERROR` | 500         | Server error                                    |
+| `ERROR`                 | Various     | Generic error                                   |
+
+### Example Responses
+
+**Success Response:**
+
+```json
+{
+  "success": true,
+  "message": "User created successfully",
+  "message_code": "CREATED",
+  "data": {
+    "id": 1,
+    "name": "John Doe"
+  }
+}
+```
+
+**Error Response:**
+
+```json
+{
+  "success": false,
+  "message": "Unauthorized - Invalid or expired token",
+  "message_code": "INVALID_TOKEN"
+}
+```
+
+**Validation Error:**
+
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "message_code": "VALIDATION_FAILED",
+  "errors": {
+    "email": ["Email is required"]
+  }
+}
+```
+
+### Frontend Usage Example
+
+```javascript
+// Handle API response with message_code
+fetch("/api/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ username: "user", password: "pass" }),
+})
+  .then((res) => res.json())
+  .then((data) => {
+    switch (data.message_code) {
+      case "SUCCESS":
+        console.log("Login successful");
+        break;
+      case "INVALID_CREDENTIALS":
+        console.log("Wrong username or password");
+        break;
+      case "INVALID_TOKEN":
+        console.log("Session expired, please login again");
+        break;
+      case "VALIDATION_FAILED":
+        console.log("Form validation errors:", data.errors);
+        break;
+      case "RATE_LIMIT_EXCEEDED":
+        console.log("Too many attempts, please wait");
+        break;
+      default:
+        console.log("Error:", data.message);
+    }
+  });
+```
+
 ## 📊 PERFORMANCE
 
 | Metric               | Result             |
@@ -315,6 +419,7 @@ Remove or restrict these origins in production and list only trusted domains.
 - **Database Setup:** [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md)
 - **Multi-Database Guide:** [docs/MULTI_DATABASE.md](docs/MULTI_DATABASE.md)
 - **User Model Guide:** [docs/USER_MODEL.md](docs/USER_MODEL.md)
+- **Error Handling Guide:** [docs/03-advanced/ERROR_HANDLING.md](docs/03-advanced/ERROR_HANDLING.md)
 - **Frontend Integration:** [docs/FRONTEND_INTEGRATION.md](docs/FRONTEND_INTEGRATION.md)
 - **Frontend Examples:** [docs/frontend-examples.js](docs/frontend-examples.js)
 - **API Testing:** [docs/API_TESTING.md](docs/API_TESTING.md)
@@ -325,4 +430,4 @@ Remove or restrict these origins in production and list only trusted domains.
 **For complete documentation, see:** [docs/README.md](docs/README.md)
 
 **Last Updated:** 2026-01-22  
-**Version:** 2.0
+**Version:** 1.0.0

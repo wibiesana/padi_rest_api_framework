@@ -17,7 +17,8 @@ class AuthMiddleware
             $response = new Response();
             $response->json([
                 'success' => false,
-                'message' => 'Unauthorized - No token provided'
+                'message' => 'Unauthorized - No token provided',
+                'message_code' => 'NO_TOKEN_PROVIDED'
             ], 401);
         }
 
@@ -27,7 +28,8 @@ class AuthMiddleware
             $response = new Response();
             $response->json([
                 'success' => false,
-                'message' => 'Unauthorized - Invalid or expired token'
+                'message' => 'Unauthorized - Invalid or expired token',
+                'message_code' => 'INVALID_TOKEN'
             ], 401);
         }
 
