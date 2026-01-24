@@ -134,9 +134,10 @@ function runCommand($command, $description = '')
     exec($command . ' 2>&1', $output, $returnCode);
 
     if ($returnCode !== 0) {
-        error("Command failed: $command");
+        error("Command failed with code {$returnCode}: $command");
+        error("Error details:");
         foreach ($output as $line) {
-            echo "  " . $line . PHP_EOL;
+            echo Colors::colorize("  ", 'red') . $line . PHP_EOL;
         }
         return false;
     }
@@ -241,8 +242,37 @@ try {
     success(".env file updated");
     echo PHP_EOL;
 
-    // Step 4: Generate JWT Secret
-    echo Colors::colorize("[4/7] Generating JWT Secret...", 'yellow') . PHP_EOL;
+    // Step 4: Test Database Connection
+    echo Colors::colorize("[4/8] Testing Database Connection...", 'yellow') . PHP_EOL;
+
+    try {
+        require_once __DIR__ . '/vendor/autoload.php';
+        Core\Env::load(__DIR__ . '/.env');
+
+        $db = Core\DatabaseManager::connection();
+        $db->query('SELECT 1');
+        success("Database connection successful!");
+    } catch (Exception $e) {
+        error("Database connection failed!");
+        error("Error: " . $e->getMessage());
+        echo PHP_EOL;
+        warning("Common issues:");
+        echo "  • Check database credentials in .env file" . PHP_EOL;
+        echo "  • Ensure database server is running" . PHP_EOL;
+        echo "  • Verify database exists (for MySQL/PostgreSQL)" . PHP_EOL;
+        echo "  • Check if port is correct" . PHP_EOL;
+        echo PHP_EOL;
+
+        $continue = ask("Continue anyway? (y/n)", 'n');
+        if (strtolower($continue) !== 'y') {
+            error("Setup aborted. Please fix database connection and run init.php again.");
+            exit(1);
+        }
+    }
+    echo PHP_EOL;
+
+    // Step 5: Generate JWT Secret
+    echo Colors::colorize("[5/8] Generating JWT Secret...", 'yellow') . PHP_EOL;
 
     $jwtSecret = bin2hex(random_bytes(32));
     updateEnv('JWT_SECRET', $jwtSecret);
@@ -250,8 +280,8 @@ try {
     success("JWT Secret generated and saved");
     echo PHP_EOL;
 
-    // Step 5: Run Migrations
-    echo Colors::colorize("[5/7] Database Migrations", 'yellow') . PHP_EOL;
+    // Step 6: Run Migrations
+    echo Colors::colorize("[6/8] Database Migrations", 'yellow') . PHP_EOL;
 
     $migrateChoice = choice("Migration options:", [
         1 => 'Migrate base tables only (users, password_resets)',
@@ -262,21 +292,51 @@ try {
     if ($migrateChoice == 1) {
         echo PHP_EOL;
         info("Running base migrations...");
-        runCommand('php scripts/migrate.php migrate --tables=users,password_resets');
-        success("Base migrations completed");
+        $migrationSuccess = runCommand('php scripts/migrate.php migrate --tables=users,password_resets');
+        if ($migrationSuccess) {
+            success("Base migrations completed");
+        } else {
+            error("Migration failed!");
+            warning("Troubleshooting:");
+            echo "  • Ensure database connection is working" . PHP_EOL;
+            echo "  • Check if migration files exist in database/migrations/" . PHP_EOL;
+            echo "  • Review error messages above" . PHP_EOL;
+            echo PHP_EOL;
+
+            $continue = ask("Continue to next step? (y/n)", 'y');
+            if (strtolower($continue) !== 'y') {
+                error("Setup aborted.");
+                exit(1);
+            }
+        }
     } elseif ($migrateChoice == 2) {
         echo PHP_EOL;
         info("Running all migrations...");
-        runCommand('php scripts/migrate.php migrate');
-        success("All migrations completed");
+        $migrationSuccess = runCommand('php scripts/migrate.php migrate');
+        if ($migrationSuccess) {
+            success("All migrations completed");
+        } else {
+            error("Migration failed!");
+            warning("Troubleshooting:");
+            echo "  • Ensure database connection is working" . PHP_EOL;
+            echo "  • Check if migration files exist in database/migrations/" . PHP_EOL;
+            echo "  • Review error messages above" . PHP_EOL;
+            echo PHP_EOL;
+
+            $continue = ask("Continue to next step? (y/n)", 'y');
+            if (strtolower($continue) !== 'y') {
+                error("Setup aborted.");
+                exit(1);
+            }
+        }
     } else {
         warning("Migrations skipped");
     }
 
     echo PHP_EOL;
 
-    // Step 6: Generate CRUD
-    echo Colors::colorize("[6/7] CRUD Generation", 'yellow') . PHP_EOL;
+    // Step 7: Generate CRUD
+    echo Colors::colorize("[7/8] CRUD Generation", 'yellow') . PHP_EOL;
 
     $generateChoice = choice("Generate CRUD controllers and models?", [
         1 => 'Yes - Generate for all tables',
@@ -287,8 +347,17 @@ try {
     if ($generateChoice == 1) {
         echo PHP_EOL;
         info("Generating CRUD for all tables...");
-        runCommand("php scripts/generate.php crud-all --write --driver=$selectedDriver");
-        success("CRUD generation completed");
+        $crudSuccess = runCommand("php scripts/generate.php crud-all --write --driver=$selectedDriver");
+        if ($crudSuccess) {
+            success("CRUD generation completed");
+        } else {
+            error("CRUD generation failed!");
+            warning("Troubleshooting:");
+            echo "  • Ensure database tables exist (run migrations first)" . PHP_EOL;
+            echo "  • Check if generate.php script exists" . PHP_EOL;
+            echo "  • Review error messages above" . PHP_EOL;
+            echo PHP_EOL;
+        }
     } elseif ($generateChoice == 2) {
         echo PHP_EOL;
         info("Available tables:");
@@ -298,11 +367,20 @@ try {
         $tables = ask("Enter table names (comma separated)", "");
         if ($tables) {
             $tableList = array_map('trim', explode(',', $tables));
+            $allSuccess = true;
             foreach ($tableList as $table) {
                 info("Generating CRUD for $table...");
-                runCommand("php scripts/generate.php crud $table --write --driver=$selectedDriver");
+                $result = runCommand("php scripts/generate.php crud $table --write --driver=$selectedDriver");
+                if (!$result) {
+                    error("Failed to generate CRUD for table: $table");
+                    $allSuccess = false;
+                }
             }
-            success("CRUD generation completed");
+            if ($allSuccess) {
+                success("CRUD generation completed");
+            } else {
+                warning("Some CRUD generations failed. Check errors above.");
+            }
         }
     } else {
         warning("CRUD generation skipped");
@@ -310,7 +388,7 @@ try {
 
     echo PHP_EOL;
 
-    // Step 7: Summary
+    // Step 8: Summary
     echo Colors::colorize("╔════════════════════════════════════════════════════════════════╗", 'green') . PHP_EOL;
     echo Colors::colorize("║              Setup Completed Successfully! 🎉                 ║", 'green') . PHP_EOL;
     echo Colors::colorize("╚════════════════════════════════════════════════════════════════╝", 'green') . PHP_EOL;

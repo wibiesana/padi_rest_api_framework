@@ -71,17 +71,71 @@ Enter your choice [1]:
    - Validates choices
    - Updates `.env` automatically
 
-4. **JWT secret generation**
-   - Secure random key
+4. **Tests database connection**
+   - Validates credentials before proceeding
+   - Shows detailed error messages if connection fails
+   - Provides troubleshooting tips
+   - Option to continue or abort setup
+
+5. **JWT secret generation**
+   - Secure random key (64 characters)
    - Automatic save to `.env`
 
-5. **Migrations**
-   - Base tables or full examples
+6. **Migrations with error handling**
+   - Base tables (users, password_resets) or full examples
    - Clear progress feedback
+   - Detailed error messages if migration fails
+   - Troubleshooting suggestions
+   - Option to continue or abort on failure
 
-6. **CRUD generation (optional)**
-   - All tables or selective
+7. **CRUD generation with validation**
+   - All tables or selective generation
    - Driver-specific generation
+   - Per-table error tracking
+   - Success/failure summary
+   - Protected tables auto-skipped (users, password_resets, migrations)
+
+### Error Handling:
+
+✅ **Database Connection Errors**
+
+```
+✗ Database connection failed!
+✗ Error: SQLSTATE[HY000] [1045] Access denied for user...
+
+⚠ Common issues:
+  • Check database credentials in .env file
+  • Ensure database server is running
+  • Verify database exists (for MySQL/PostgreSQL)
+  • Check if port is correct
+
+Continue anyway? (y/n) [n]:
+```
+
+✅ **Migration Errors**
+
+```
+✗ Command failed with code 1: php scripts/migrate.php migrate
+✗ Error details:
+  Table 'users' already exists
+
+⚠ Troubleshooting:
+  • Ensure database connection is working
+  • Check if migration files exist in database/migrations/
+  • Review error messages above
+
+Continue to next step? (y/n) [y]:
+```
+
+✅ **CRUD Generation Errors**
+
+```
+✗ CRUD generation failed!
+⚠ Troubleshooting:
+  • Ensure database tables exist (run migrations first)
+  • Check if generate.php script exists
+  • Review error messages above
+```
 
 ---
 
