@@ -111,7 +111,7 @@ return new class
             $db->exec("DROP FUNCTION IF EXISTS update_updated_at_column()");
         }
 
-        $db->exec("DROP TABLE IF EXISTS users");
+        $db->exec("DROP TABLE IF EXISTS user");
         echo "✓ Users table dropped\n";
     }
 };
