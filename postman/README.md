@@ -1,10 +1,10 @@
 # Postman Collections
 
-Collection files untuk testing API.
+Collection files for API testing.
 
 ## 📖 Documentation
 
-Untuk panduan lengkap penggunaan Postman Collections, lihat:
+For complete usage guide of Postman Collections, see:
 
 **[📮 Postman Guide](../docs/03-advanced/POSTMAN_GUIDE.md)**
 
@@ -16,9 +16,9 @@ Untuk panduan lengkap penggunaan Postman Collections, lihat:
 
 ## 🚀 Quick Start
 
-1. Import collection ke Postman
+1. Import collection to Postman
 2. Set `base_url` variable
-3. Login untuk mendapatkan token
+3. Login to get token
 4. Test endpoints
 
-Lihat dokumentasi lengkap di link di atas.
+See complete documentation at the link above.
