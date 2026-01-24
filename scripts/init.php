@@ -296,7 +296,8 @@ try {
     if ($migrateChoice == 1) {
         echo PHP_EOL;
         info("Running base migrations...");
-        $migrationSuccess = runCommand('php scripts/migrate.php migrate --tables=users,password_resets');
+        $migrationCmd = 'php ' . escapeshellarg($projectRoot . '/scripts/migrate.php') . ' migrate --tables=users,password_resets';
+        $migrationSuccess = runCommand($migrationCmd);
         if ($migrationSuccess) {
             success("Base migrations completed");
         } else {
@@ -316,7 +317,8 @@ try {
     } elseif ($migrateChoice == 2) {
         echo PHP_EOL;
         info("Running all migrations...");
-        $migrationSuccess = runCommand('php scripts/migrate.php migrate');
+        $migrationCmd = 'php ' . escapeshellarg($projectRoot . '/scripts/migrate.php') . ' migrate';
+        $migrationSuccess = runCommand($migrationCmd);
         if ($migrationSuccess) {
             success("All migrations completed");
         } else {
@@ -351,7 +353,8 @@ try {
     if ($generateChoice == 1) {
         echo PHP_EOL;
         info("Generating CRUD for all tables...");
-        $crudSuccess = runCommand("php scripts/generate.php crud-all --write --driver=$selectedDriver");
+        $crudCmd = 'php ' . escapeshellarg($projectRoot . '/scripts/generate.php') . ' crud-all --write --driver=' . escapeshellarg($selectedDriver);
+        $crudSuccess = runCommand($crudCmd);
         if ($crudSuccess) {
             success("CRUD generation completed");
         } else {
@@ -365,7 +368,7 @@ try {
     } elseif ($generateChoice == 2) {
         echo PHP_EOL;
         info("Available tables:");
-        runCommand('php scripts/generate.php list');
+        runCommand('php ' . escapeshellarg($projectRoot . '/scripts/generate.php') . ' list');
         echo PHP_EOL;
 
         $tables = ask("Enter table names (comma separated)", "");
@@ -374,7 +377,7 @@ try {
             $allSuccess = true;
             foreach ($tableList as $table) {
                 info("Generating CRUD for $table...");
-                $result = runCommand("php scripts/generate.php crud $table --write --driver=$selectedDriver");
+                $result = runCommand('php ' . escapeshellarg($projectRoot . '/scripts/generate.php') . ' crud ' . escapeshellarg($table) . ' --write --driver=' . escapeshellarg($selectedDriver));
                 if (!$result) {
                     error("Failed to generate CRUD for table: $table");
                     $allSuccess = false;
@@ -405,10 +408,10 @@ try {
     echo PHP_EOL;
 
     echo Colors::colorize("Quick Commands:", 'blue') . PHP_EOL;
-    echo "  - List tables:          " . Colors::colorize("php scripts/generate.php list", 'yellow') . PHP_EOL;
-    echo "  - Generate CRUD:        " . Colors::colorize("php scripts/generate.php crud [table] --write", 'yellow') . PHP_EOL;
-    echo "  - Run migrations:       " . Colors::colorize("php scripts/migrate.php migrate", 'yellow') . PHP_EOL;
-    echo "  - Rollback:            " . Colors::colorize("php scripts/migrate.php rollback", 'yellow') . PHP_EOL;
+    echo "  - List tables:          " . Colors::colorize("php generate.php list", 'yellow') . PHP_EOL;
+    echo "  - Generate CRUD:        " . Colors::colorize("php generate.php crud [table] --write", 'yellow') . PHP_EOL;
+    echo "  - Run migrations:       " . Colors::colorize("php migrate.php migrate", 'yellow') . PHP_EOL;
+    echo "  - Rollback:            " . Colors::colorize("php migrate.php rollback", 'yellow') . PHP_EOL;
     echo PHP_EOL;
 
     echo Colors::colorize("Happy coding! 🚀", 'green') . PHP_EOL;
