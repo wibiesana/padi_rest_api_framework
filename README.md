@@ -274,6 +274,28 @@ Quick fixes:
 
 ---
 
+## 🔧 CORS (development)
+
+When developing frontend apps locally you may run dev servers on different ports. Add the common dev origins below to `.env` so the API accepts requests from your frontend during development.
+
+Common frontend ports and examples:
+
+- `3000` — Create React App, Next.js dev
+- `5173` — Vite (React / Vue / Svelte)
+- `4200` — Angular (`ng serve`)
+- `8080` — Vue CLI / webpack-dev-server / Quasar (webpack mode)
+- `8000` — Static/dev server (Parcel, Django runserver)
+- `9000` — Custom/dev (some Quasar setups)
+- `127.0.0.1:3000`, `127.0.0.1:5173` — `localhost` variants
+
+Example `.env` entry (already updated in this repo):
+
+```
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080,http://localhost:9000,http://localhost:5173,http://localhost:4200,http://localhost:8000,http://127.0.0.1:3000,http://127.0.0.1:5173
+```
+
+Remove or restrict these origins in production and list only trusted domains.
+
 ## 📊 PERFORMANCE
 
 | Metric               | Result             |
