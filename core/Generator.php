@@ -707,56 +707,38 @@ PHP;
         // Convert prefix to uppercase for display
         $displayName = strtoupper(str_replace('-', ' ', $prefix));
 
-        // Special case for tags: public GET, protected modification
-        if ($prefix === 'tags') {
-            $routes = "// ============================================================================\n";
-            $routes .= "// TAGS ROUTES - READ OPERATIONS (PUBLIC)\n";
-            $routes .= "// ============================================================================\n";
-            $routes .= "// Public read access for tags data\n";
-            $routes .= "\$router->group(['prefix' => 'tags'], function (\$router) {\n";
-            $routes .= "    // List & view operations (public)\n";
-            $routes .= "    \$router->get('/', 'TagController@index');           // List tags with pagination\n";
-            $routes .= "    \$router->get('/all', 'TagController@all');         // Get all tags\n";
-            $routes .= "    \$router->get('/{id}', 'TagController@show');       // Get specific item\n";
-            $routes .= "});\n\n";
-
-            $routes .= "// ============================================================================\n";
-            $routes .= "// TAGS MANAGEMENT ROUTES (PROTECTED)\n";
-            $routes .= "// ============================================================================\n";
-            $routes .= "// Modification operations for tags - requires authentication\n";
-            $routes .= "\$router->group(['prefix' => 'tags', 'middleware' => ['AuthMiddleware']], function (\$router) {\n";
-            $routes .= "    // Modification operations\n";
-            $routes .= "    \$router->post('/', 'TagController@store');         // Create new item\n";
-            $routes .= "    \$router->put('/{id}', 'TagController@update');     // Update item\n";
-            $routes .= "    \$router->delete('/{id}', 'TagController@destroy'); // Delete item\n";
-            $routes .= "});\n\n";
-            return $routes;
+        // Prepare middleware for protected routes
+        $protectedMiddleware = $middleware;
+        if (!in_array('AuthMiddleware', $protectedMiddleware)) {
+            $protectedMiddleware[] = 'AuthMiddleware';
         }
 
-        // Default: all routes protected
-        $hasProtectedRoutes = !empty($protected);
-        if ($hasProtectedRoutes && !in_array('AuthMiddleware', $middleware)) {
-            $middleware[] = 'AuthMiddleware';
-        }
-        $middlewareStr = empty($middleware) ? '' : ", 'middleware' => ['" . implode("', '", $middleware) . "']";
+        $protectedMiddlewareStr = empty($protectedMiddleware) ? '' : ", 'middleware' => ['" . implode("', '", $protectedMiddleware) . "']";
+
+        // Prepare middleware for public routes (exclude AuthMiddleware)
+        $publicMiddleware = array_diff($middleware, ['AuthMiddleware']);
+        $publicMiddlewareStr = empty($publicMiddleware) ? '' : ", 'middleware' => ['" . implode("', '", $publicMiddleware) . "']";
 
         $routes = "// ============================================================================\n";
-        $routes .= "// {$displayName} MANAGEMENT ROUTES (PROTECTED)\n";
+        $routes .= "// {$displayName} ROUTES - READ OPERATIONS (PUBLIC)\n";
         $routes .= "// ============================================================================\n";
-        $routes .= "// Standard CRUD operations for {$prefix} - requires authentication\n";
-        $routes .= "\$router->group(['prefix' => '{$prefix}'{$middlewareStr}], function (\$router) {\n";
+        $routes .= "// Public read access for {$prefix} data\n";
+        $routes .= "\$router->group(['prefix' => '{$prefix}'{$publicMiddlewareStr}], function (\$router) {\n";
         $routes .= "    // List & view operations\n";
         $routes .= "    \$router->get('/', '{$controllerName}@index');           // List {$prefix} with pagination\n";
-        if (!$hasProtectedRoutes || !in_array('all', $protected)) {
-            $routes .= "    \$router->get('/all', '{$controllerName}@all');         // Get all {$prefix}\n";
-        }
+        $routes .= "    \$router->get('/all', '{$controllerName}@all');         // Get all {$prefix}\n";
         $routes .= "    \$router->get('/{id}', '{$controllerName}@show');       // Get specific item\n";
-        $routes .= "\n    // Modification operations\n";
+        $routes .= "});\n\n";
 
+        $routes .= "// ============================================================================\n";
+        $routes .= "// {$displayName} MANAGEMENT ROUTES (PROTECTED)\n";
+        $routes .= "// ============================================================================\n";
+        $routes .= "// Modification operations for {$prefix} - requires authentication\n";
+        $routes .= "\$router->group(['prefix' => '{$prefix}'{$protectedMiddlewareStr}], function (\$router) {\n";
+        $routes .= "    // Modification operations\n";
         $routes .= "    \$router->post('/', '{$controllerName}@store');         // Create new item\n";
         $routes .= "    \$router->put('/{id}', '{$controllerName}@update');     // Update item\n";
         $routes .= "    \$router->delete('/{id}', '{$controllerName}@destroy'); // Delete item\n";
-
         $routes .= "});\n";
         $routes .= "\n";
 

@@ -52,16 +52,14 @@ $router->group(['prefix' => 'auth'], function ($router) {
 });
 
 // ============================================================================
-// USER MANAGEMENT ROUTES (PROTECTED)
+// USERS MANAGEMENT ROUTES (PROTECTED)
 // ============================================================================
-// Standard CRUD operations for user management - requires authentication
+// Modification operations for users - requires authentication
 $router->group(['prefix' => 'users', 'middleware' => ['AuthMiddleware']], function ($router) {
-    // List & view operations
-    $router->get('/', 'UserController@index');           // List users with pagination
-    $router->get('/all', 'UserController@all');         // Get all users (admin only)
-    $router->get('/{id}', 'UserController@show');       // Get specific user
-
     // Modification operations
+    $router->get('/', 'UserController@index');           // List users with pagination
+    $router->get('/all', 'UserController@all');         // Get all users
+    $router->get('/{id}', 'UserController@show');
     $router->post('/', 'UserController@store');         // Create new user
     $router->put('/{id}', 'UserController@update');     // Update user
     $router->delete('/{id}', 'UserController@destroy'); // Delete user
