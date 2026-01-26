@@ -68,4 +68,5 @@ $router->group(['prefix' => 'users', 'middleware' => ['AuthMiddleware']], functi
 });
 
 
+
 return $router;

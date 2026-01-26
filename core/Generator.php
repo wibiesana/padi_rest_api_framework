@@ -707,12 +707,37 @@ PHP;
         // Convert prefix to uppercase for display
         $displayName = strtoupper(str_replace('-', ' ', $prefix));
 
-        // Add AuthMiddleware to middleware array if any routes are protected
+        // Special case for tags: public GET, protected modification
+        if ($prefix === 'tags') {
+            $routes = "// ============================================================================\n";
+            $routes .= "// TAGS ROUTES - READ OPERATIONS (PUBLIC)\n";
+            $routes .= "// ============================================================================\n";
+            $routes .= "// Public read access for tags data\n";
+            $routes .= "\$router->group(['prefix' => 'tags'], function (\$router) {\n";
+            $routes .= "    // List & view operations (public)\n";
+            $routes .= "    \$router->get('/', 'TagController@index');           // List tags with pagination\n";
+            $routes .= "    \$router->get('/all', 'TagController@all');         // Get all tags\n";
+            $routes .= "    \$router->get('/{id}', 'TagController@show');       // Get specific item\n";
+            $routes .= "});\n\n";
+
+            $routes .= "// ============================================================================\n";
+            $routes .= "// TAGS MANAGEMENT ROUTES (PROTECTED)\n";
+            $routes .= "// ============================================================================\n";
+            $routes .= "// Modification operations for tags - requires authentication\n";
+            $routes .= "\$router->group(['prefix' => 'tags', 'middleware' => ['AuthMiddleware']], function (\$router) {\n";
+            $routes .= "    // Modification operations\n";
+            $routes .= "    \$router->post('/', 'TagController@store');         // Create new item\n";
+            $routes .= "    \$router->put('/{id}', 'TagController@update');     // Update item\n";
+            $routes .= "    \$router->delete('/{id}', 'TagController@destroy'); // Delete item\n";
+            $routes .= "});\n\n";
+            return $routes;
+        }
+
+        // Default: all routes protected
         $hasProtectedRoutes = !empty($protected);
         if ($hasProtectedRoutes && !in_array('AuthMiddleware', $middleware)) {
             $middleware[] = 'AuthMiddleware';
         }
-
         $middlewareStr = empty($middleware) ? '' : ", 'middleware' => ['" . implode("', '", $middleware) . "']";
 
         $routes = "// ============================================================================\n";
@@ -780,7 +805,7 @@ PHP;
     {
         $modelName = $this->tableNameToModelName($tableName);
         $resourceName = strtolower($modelName);
-        $prefix = $options['prefix'] ?? strtolower($tableName);
+        $prefix = $options['prefix'] ?? str_replace('_', '-', strtolower($tableName));
         $protected = $options['protected'] ?? ['store', 'update', 'destroy'];
 
         // Get schema for generating sample data
