@@ -38,7 +38,7 @@ services:
       - DB_PASS=
 
       # JWT
-      - JWT_SECRET=your-64-character-random-secret-here-change-in-production
+      - JWT_SECRET=JWT_SECRET=9d79ab09351bb21c3398ebc63d00fcc401904bcaf1c729d5e958a45ff380247f
       - JWT_ALGORITHM=HS256
       - JWT_EXPIRY=3600
 
@@ -61,7 +61,7 @@ services:
   # Redis - Always included
   redis:
     image: redis:7-alpine
-    container_name: padi_redis
+    container_name: padi_redis_worker
     restart: unless-stopped
     volumes:
       - redis_data:/data

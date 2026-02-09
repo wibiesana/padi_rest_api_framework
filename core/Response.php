@@ -32,9 +32,9 @@ class Response
      */
     public function json($data, int $statusCode = 200): void
     {
-        // Prevent sending multiple responses
-        if (headers_sent()) {
-            return;
+        // Log if headers were already sent, but continue to try and send the body
+        if (headers_sent($file, $line)) {
+            error_log("Response::json - headers already sent at $file:$line");
         }
 
         $this->status($statusCode);
@@ -50,7 +50,7 @@ class Response
                 if (isset($query['params']) && is_array($query['params'])) {
                     foreach ($query['params'] as $key => $value) {
                         foreach ($sensitiveKeys as $sensitiveKey) {
-                            if (stripos($key, $sensitiveKey) !== false) {
+                            if (stripos((string)$key, $sensitiveKey) !== false) {
                                 $query['params'][$key] = '***REDACTED***';
                             }
                         }
@@ -89,7 +89,11 @@ class Response
 
             // Add debug info directly to the response instead of wrapping
             if (is_array($data)) {
-                $data['debug'] = $debugInfo;
+                if (isset($data['debug']) && is_array($data['debug'])) {
+                    $data['debug'] = array_merge($data['debug'], $debugInfo);
+                } else {
+                    $data['debug'] = $debugInfo;
+                }
             } else {
                 // If data is not an array, wrap it but flatten the structure
                 $data = [
@@ -107,7 +111,12 @@ class Response
         }
 
         $this->sendHeaders();
-        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+
+        // 204 No Content should not have a body
+        if ($statusCode !== 204) {
+            echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        }
+
         $this->terminate();
     }
 
@@ -116,8 +125,8 @@ class Response
      */
     public function text(string $data, int $code = 200): void
     {
-        if (headers_sent()) {
-            return;
+        if (headers_sent($file, $line)) {
+            error_log("Response::text - headers already sent at $file:$line");
         }
 
         $this->statusCode = $code;
@@ -133,8 +142,8 @@ class Response
      */
     public function html(string $data, int $code = 200): void
     {
-        if (headers_sent()) {
-            return;
+        if (headers_sent($file, $line)) {
+            error_log("Response::html - headers already sent at $file:$line");
         }
 
         $this->statusCode = $code;
@@ -170,8 +179,8 @@ class Response
      */
     public function redirect(string $url, int $code = 302): void
     {
-        if (headers_sent()) {
-            return;
+        if (headers_sent($file, $line)) {
+            error_log("Response::redirect - headers already sent at $file:$line");
         }
 
         $this->statusCode = $code;
@@ -192,33 +201,10 @@ class Response
 
         http_response_code($this->statusCode);
 
-        // Security Headers
-        header('X-Frame-Options: SAMEORIGIN'); // Prevent Clickjacking
-        header('X-XSS-Protection: 1; mode=block'); // XSS Filter for older browsers
-        header('X-Content-Type-Options: nosniff'); // Prevent MIME sniffing
-        header('Referrer-Policy: no-referrer-when-downgrade');
-        header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data:;");
-        header('Strict-Transport-Security: max-age=31536000; includeSubDomains'); // Force HTTPS
-
-        // Set CORS headers with environment-based whitelist
-        $allowedOrigins = array_filter(explode(',', Env::get('CORS_ALLOWED_ORIGINS', '')));
-        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-
-        // In development, allow all origins
-        if (Env::get('APP_ENV') === 'development') {
-            header('Access-Control-Allow-Origin: *');
-        } else if (!empty($allowedOrigins) && in_array($origin, $allowedOrigins)) {
-            // In production, only allow whitelisted origins
-            header("Access-Control-Allow-Origin: {$origin}");
-            header('Access-Control-Allow-Credentials: true');
-        } else if (!empty($origin)) {
-            // Origin provided but not in whitelist - deny
-            http_response_code(403);
-            exit('CORS policy: Origin not allowed');
-        }
-
-        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH');
-        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+        // All CORS and Security headers are now handled in index.php
+        // but we keep some basic security headers here as secondary protection
+        header('X-Frame-Options: SAMEORIGIN');
+        header('X-Content-Type-Options: nosniff');
 
         foreach ($this->headers as $key => $value) {
             header("{$key}: {$value}");

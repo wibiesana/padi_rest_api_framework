@@ -14,6 +14,7 @@ return new class
         if ($driver === 'sqlite') {
             $sql = "CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR(50) NULL,
                 username VARCHAR(50) UNIQUE,
                 email VARCHAR(255) NOT NULL UNIQUE,
                 password VARCHAR(255) NOT NULL,

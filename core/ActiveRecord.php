@@ -12,10 +12,27 @@ abstract class ActiveRecord
 {
     protected PDO $db;
     protected string $table;
-    protected string $primaryKey = 'id';
+    protected string|array $primaryKey = 'id';
     protected array $fillable = [];
     protected array $hidden = [];
     protected array $with = [];
+    protected ?string $defaultOrder = null;
+
+    /**
+     * Get table name
+     */
+    public function getTable(): string
+    {
+        return $this->table;
+    }
+
+    /**
+     * Get database connection
+     */
+    public function getDb(): PDO
+    {
+        return $this->db;
+    }
 
     /**
      * Enable automatic audit fields (created_at, updated_at, created_by, updated_by)
@@ -105,89 +122,236 @@ abstract class ActiveRecord
     /**
      * Load relations for result set
      */
-    protected function loadRelations(array &$results): void
+    /**
+     * Load relations for result set
+     */
+    public function loadRelations(array &$results): void
     {
-        foreach ($this->with as $relation) {
+        if (empty($results)) return;
+
+        // Group relations by base name to avoid redundant loads and overwriting
+        $groupedRelations = [];
+        foreach ($this->with as $relationItem) {
+            $baseRelation = $relationItem;
+            $nestedPart = null;
+            $columnsPart = null;
+
+            // Handle dot notation for nested: "relation.child"
+            if (strpos($baseRelation, '.') !== false) {
+                [$baseRelation, $nestedPart] = explode('.', $baseRelation, 2);
+            }
+
+            // Handle column specification: "relation:id,name"
+            if (strpos($baseRelation, ':') !== false) {
+                [$baseRelation, $columnsPart] = explode(':', $baseRelation, 2);
+            }
+
+            if (!isset($groupedRelations[$baseRelation])) {
+                $groupedRelations[$baseRelation] = [
+                    'columns' => $columnsPart ? array_map('trim', explode(',', $columnsPart)) : null,
+                    'nested' => []
+                ];
+            }
+            if ($nestedPart) {
+                $groupedRelations[$baseRelation]['nested'][] = $nestedPart;
+            }
+        }
+
+        foreach ($groupedRelations as $relation => $config) {
             if (method_exists($this, $relation)) {
                 $relationConfig = $this->$relation();
+                $columnsOverride = $config['columns'];
+                $nestedRelations = $config['nested'];
 
                 // Collect IDs
                 $ids = array_column($results, $relationConfig['local_key']);
+                $ids = array_filter(array_unique($ids)); // Optimization: Unique IDs only
+
                 if (empty($ids)) continue;
 
                 $placeholders = implode(',', array_fill(0, count($ids), '?'));
 
-                // Fetch related data
-                $relatedModel = new $relationConfig['model']();
-                $sql = "SELECT * FROM {$relatedModel->table} WHERE {$relationConfig['foreign_key']} IN ($placeholders)";
+                // Determine columns to select
+                $selectColumns = $columnsOverride ?? $relationConfig['columns'] ?? ['*'];
 
-                $stmt = $this->db->prepare($sql);
-                $stmt->execute($ids);
-                $relatedData = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                // Group related data by foreign key
-                $relatedMap = [];
-                foreach ($relatedData as $item) {
-                    $relatedMap[$item[$relationConfig['foreign_key']]][] = $item;
+                // Ensure the foreign key is selected to allow mapping back to parent
+                if ($selectColumns !== ['*'] && !in_array('*', $selectColumns) && $relationConfig['type'] !== 'belongsToMany') {
+                    $fk = $relationConfig['foreign_key'];
+                    if (!in_array($fk, $selectColumns)) {
+                        $selectColumns[] = $fk;
+                    }
                 }
 
-                // Attach to results
-                foreach ($results as &$result) {
-                    $key = $result[$relationConfig['local_key']];
-                    $result[$relation] = $relatedMap[$key] ?? [];
+                $selectStr = implode(',', $selectColumns);
 
-                    // If belongsTo (single item), unwrap array
-                    if ($relationConfig['type'] === 'belongsTo') {
-                        $result[$relation] = $result[$relation][0] ?? null;
+                // Fetch Related Data
+                if ($relationConfig['type'] === 'belongsToMany') {
+                    $pivotTable = $relationConfig['pivot_table'];
+                    $foreignKey = $relationConfig['foreign_key'];
+                    $relatedKey = $relationConfig['related_key'];
+
+                    $relatedModel = new $relationConfig['model']();
+                    $relatedTable = $relatedModel->getTable();
+                    $relatedPk = $relatedModel->primaryKey;
+
+                    $qualifiedCols = implode(',', array_map(fn($c) => "rt.$c", $selectColumns));
+
+                    $sql = "SELECT pt.{$foreignKey} as _pivot_key, {$qualifiedCols} 
+                            FROM {$pivotTable} pt 
+                            JOIN {$relatedTable} rt ON pt.{$relatedKey} = rt.{$relatedPk}
+                            WHERE pt.{$foreignKey} IN ({$placeholders})";
+
+                    $stmt = $this->db->prepare($sql);
+                    $stmt->execute(array_values($ids));
+                    $relatedData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    if (method_exists($relatedModel, 'afterLoad')) {
+                        $relatedModel->afterLoad($relatedData);
+                    }
+
+                    // Handle nested eager loading
+                    if (!empty($nestedRelations)) {
+                        $relatedModel->with($nestedRelations);
+                        $relatedModel->loadRelations($relatedData);
+                    }
+
+                    // Group by pivot_key
+                    $relatedMap = [];
+                    foreach ($relatedData as $item) {
+                        $pivotKey = $item['_pivot_key'];
+                        unset($item['_pivot_key']);
+                        $relatedMap[$pivotKey][] = $item;
+                    }
+
+                    // Attach to results
+                    foreach ($results as &$result) {
+                        $key = $result[$this->primaryKey] ?? null;
+                        if ($key === null) continue;
+                        $result[$relation] = $relatedMap[$key] ?? [];
+                    }
+                } else {
+                    // Fetch related data for belongsTo and hasMany
+                    $relatedModel = new $relationConfig['model']();
+                    $sql = "SELECT {$selectStr} FROM {$relatedModel->table} WHERE {$relationConfig['foreign_key']} IN ($placeholders)";
+
+                    $stmt = $this->db->prepare($sql);
+                    $stmt->execute(array_values($ids));
+                    $relatedData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    if (method_exists($relatedModel, 'afterLoad')) {
+                        $relatedModel->afterLoad($relatedData);
+                    }
+
+                    // Handle nested eager loading
+                    if (!empty($nestedRelations)) {
+                        $relatedModel->with($nestedRelations);
+                        $relatedModel->loadRelations($relatedData);
+                    } elseif (method_exists($relatedModel, 'getWith') && !empty($relatedModel->getWith())) {
+                        $relatedModel->loadRelations($relatedData);
+                    }
+
+                    // Group related data by foreign key
+                    $relatedMap = [];
+                    foreach ($relatedData as $item) {
+                        $relatedMap[$item[$relationConfig['foreign_key']]][] = $item;
+                    }
+
+                    // Attach to results
+                    foreach ($results as &$result) {
+                        $key = $result[$relationConfig['local_key']] ?? null;
+                        if ($key === null) continue;
+
+                        $result[$relation] = $relatedMap[$key] ?? [];
+
+                        // If belongsTo (single item), unwrap array
+                        if ($relationConfig['type'] === 'belongsTo') {
+                            $result[$relation] = $result[$relation][0] ?? null;
+                        }
                     }
                 }
             }
         }
     }
 
+    /**
+     * Get defined eager loads
+     */
+    public function getWith(): array
+    {
+        return $this->with;
+    }
+
     // Relationship helpers
-    protected function hasMany(string $model, string $foreignKey, string $localKey = 'id'): array
+    protected function hasMany(string $model, string $foreignKey, string $localKey = 'id', array $columns = ['*']): array
     {
         return [
             'type' => 'hasMany',
             'model' => $model,
             'foreign_key' => $foreignKey,
-            'local_key' => $localKey
+            'local_key' => $localKey,
+            'columns' => $columns
         ];
     }
 
-    protected function belongsTo(string $model, string $foreignKey, string $ownerKey = 'id'): array
+    protected function belongsTo(string $model, string $foreignKey, string $ownerKey = 'id', array $columns = ['*']): array
     {
         return [
             'type' => 'belongsTo',
             'model' => $model,
             'foreign_key' => $ownerKey, // In related table
-            'local_key' => $foreignKey  // In this table
+            'local_key' => $foreignKey,  // In this table
+            'columns' => $columns
+        ];
+    }
+
+    protected function belongsToMany(string $model, string $pivotTable, string $foreignKey, string $relatedKey, array $columns = ['*']): array
+    {
+        return [
+            'type' => 'belongsToMany',
+            'model' => $model,
+            'pivot_table' => $pivotTable,
+            'foreign_key' => $foreignKey, // key for THIS model in pivot
+            'related_key' => $relatedKey, // key for RELATED model in pivot
+            'local_key' => $this->primaryKey, // key in THIS model
+            'columns' => $columns
         ];
     }
 
     /**
      * Find all records
      */
-    public function all(array $columns = ['*']): array
+    public function all(array $columns = ['*'], string $orderBy = null): array
     {
         // Validate column names to prevent SQL injection
         $sanitizedCols = array_map(function ($col) {
             if ($col === '*') return $col;
             // Only allow valid column names (alphanumeric and underscore)
-            if (!preg_match('/^[a-zA-Z0-9_]+$/', $col)) {
+            if (!preg_match('/^[a-zA-Z0-9_-]+$/', $col)) {
                 throw new \InvalidArgumentException("Invalid column name: {$col}");
             }
             return $col;
         }, $columns);
 
         $cols = implode(', ', $sanitizedCols);
-        $sql = "SELECT {$cols} FROM {$this->table}";
+
+        $orderClause = '';
+        $orderBy = $orderBy ?: $this->defaultOrder;
+        if ($orderBy) {
+            $orderClause = " ORDER BY {$orderBy}";
+        } elseif (is_string($this->primaryKey)) {
+            $orderClause = " ORDER BY {$this->primaryKey} DESC";
+        }
+
+        $sql = "SELECT {$cols} FROM {$this->table}{$orderClause}";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
         Database::logQuery($sql);
 
         $results = $this->hideFields($stmt->fetchAll(PDO::FETCH_ASSOC));
+
+        if (method_exists($this, 'afterLoad')) {
+            $this->afterLoad($results);
+        }
 
         // If 'with' was called on an instance before calling all()
         if (!empty($this->with) && !empty($results)) {
@@ -198,23 +362,33 @@ abstract class ActiveRecord
     }
 
     /**
-     * Find record by ID
+     * Find record by ID (supports composite keys via array or underscore-separated string)
      */
-    public function find(int|string $id, array $columns = ['*']): ?array
+    public function find(int|string|array $id, array $columns = ['*']): ?array
     {
-        // Validate column names to prevent SQL injection
+        // Validate column names
         $sanitizedCols = array_map(function ($col) {
             if ($col === '*') return $col;
-            if (!preg_match('/^[a-zA-Z0-9_]+$/', $col)) {
+            if (!preg_match('/^[a-zA-Z0-9_-]+$/', $col)) {
                 throw new \InvalidArgumentException("Invalid column name: {$col}");
             }
             return $col;
         }, $columns);
 
         $cols = implode(', ', $sanitizedCols);
-        $sql = "SELECT {$cols} FROM {$this->table} WHERE {$this->primaryKey} = :id LIMIT 1";
+
+        $conditions = $this->getPkConditions($id);
+        $where = [];
+        $params = [];
+        foreach ($conditions as $col => $val) {
+            $where[] = "{$col} = :pk_{$col}";
+            $params["pk_{$col}"] = $val;
+        }
+
+        $whereClause = implode(' AND ', $where);
+        $sql = "SELECT {$cols} FROM {$this->table} WHERE {$whereClause} LIMIT 1";
+
         $stmt = $this->db->prepare($sql);
-        $params = ['id' => $id];
         $stmt->execute($params);
         Database::logQuery($sql, $params);
 
@@ -222,6 +396,11 @@ abstract class ActiveRecord
 
         if ($result) {
             $results = [$result];
+
+            if (method_exists($this, 'afterLoad')) {
+                $this->afterLoad($results);
+            }
+
             if (!empty($this->with)) {
                 $this->loadRelations($results);
             }
@@ -229,6 +408,34 @@ abstract class ActiveRecord
         }
 
         return null;
+    }
+
+    /**
+     * Helper to get primary key conditions
+     */
+    protected function getPkConditions(int|string|array $id): array
+    {
+        $conditions = [];
+        if (is_array($this->primaryKey)) {
+            if (is_array($id)) {
+                foreach ($this->primaryKey as $key) {
+                    $conditions[$key] = $id[$key] ?? null;
+                }
+            } elseif (is_string($id) && strpos($id, '_') !== false) {
+                // Support virtual ID string "val1_val2_val3"
+                $values = explode('_', $id);
+                foreach ($this->primaryKey as $index => $key) {
+                    $conditions[$key] = $values[$index] ?? null;
+                }
+            } else {
+                // Fallback for single value passed to composite key (might not be ideal but for simplicity)
+                $firstKey = $this->primaryKey[0];
+                $conditions[$firstKey] = $id;
+            }
+        } else {
+            $conditions[$this->primaryKey] = is_array($id) ? ($id[$this->primaryKey] ?? null) : $id;
+        }
+        return $conditions;
     }
 
     /**
@@ -265,6 +472,10 @@ abstract class ActiveRecord
         Database::logQuery($sql, $params);
 
         $results = $this->hideFields($stmt->fetchAll(PDO::FETCH_ASSOC));
+
+        if (method_exists($this, 'afterLoad')) {
+            $this->afterLoad($results);
+        }
 
         if (!empty($this->with) && !empty($results)) {
             $this->loadRelations($results);
@@ -313,7 +524,7 @@ abstract class ActiveRecord
     /**
      * Update record by ID
      */
-    public function update(int|string $id, array $data): bool
+    public function update(int|string|array $id, array $data): bool
     {
         $data = $this->filterFillable($data);
 
@@ -322,15 +533,23 @@ abstract class ActiveRecord
         }
 
         $set = [];
-        $params = $data;
-        foreach (array_keys($data) as $key) {
-            $set[] = "{$key} = :{$key}";
+        $params = [];
+        foreach ($data as $key => $value) {
+            $set[] = "{$key} = :val_{$key}";
+            $params["val_{$key}"] = $value;
         }
 
         $setClause = implode(', ', $set);
-        $params['id'] = $id;
 
-        $sql = "UPDATE {$this->table} SET {$setClause} WHERE {$this->primaryKey} = :id";
+        $conditions = $this->getPkConditions($id);
+        $where = [];
+        foreach ($conditions as $col => $val) {
+            $where[] = "{$col} = :pk_{$col}";
+            $params["pk_{$col}"] = $val;
+        }
+        $whereClause = implode(' AND ', $where);
+
+        $sql = "UPDATE {$this->table} SET {$setClause} WHERE {$whereClause}";
 
         try {
             $stmt = $this->db->prepare($sql);
@@ -338,7 +557,14 @@ abstract class ActiveRecord
             Database::logQuery($sql, $params);
 
             if ($result) {
-                $this->afterSave(false, array_merge(['id' => $id], $data));
+                // For afterSave, we merge ID into data if possible
+                $saveData = $data;
+                if (!is_array($id)) {
+                    $saveData['id'] = $id;
+                } else {
+                    $saveData = array_merge($saveData, $id);
+                }
+                $this->afterSave(false, $saveData);
             }
 
             return $result;
@@ -349,16 +575,135 @@ abstract class ActiveRecord
     }
 
     /**
+     * Batch insert multiple records
+     */
+    public function batchInsert(array $rows): bool
+    {
+        if (empty($rows)) {
+            return false;
+        }
+
+        $preparedRows = [];
+        foreach ($rows as $row) {
+            $row = $this->filterFillable($row);
+            if ($this->beforeSave($row, true)) {
+                $preparedRows[] = $row;
+            }
+        }
+
+        if (empty($preparedRows)) {
+            return false;
+        }
+
+        // Use keys from the first row to determine columns
+        $firstRow = reset($preparedRows);
+        $columns = array_keys($firstRow);
+        $columnNames = implode(', ', $columns);
+
+        $values = [];
+        $params = [];
+
+        foreach ($preparedRows as $index => $row) {
+            $rowPlaceholders = [];
+            foreach ($columns as $col) {
+                // Use index to make unique param names
+                $paramName = ":{$col}_{$index}";
+                $rowPlaceholders[] = $paramName;
+                $params[$paramName] = $row[$col] ?? null;
+            }
+            $values[] = '(' . implode(', ', $rowPlaceholders) . ')';
+        }
+
+        $valuesClause = implode(', ', $values);
+        $sql = "INSERT INTO {$this->table} ({$columnNames}) VALUES {$valuesClause}";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute($params);
+            // Logging massive query might be bad, truncating params in log
+            Database::logQuery($sql, array_slice($params, 0, 10)); // Log only first 10 params
+
+            if ($result) {
+                Cache::delete("table_count:{$this->table}");
+            }
+
+            return $result;
+        } catch (\PDOException $e) {
+            Database::logQueryError($e, $sql, array_slice($params, 0, 10));
+            throw $e;
+        }
+    }
+
+    /**
+     * Update multiple records matching conditions
+     * 
+     * @param array $data Data to update
+     * @param array $conditions Key-value pairs for WHERE clause
+     */
+    public function updateAll(array $data, array $conditions = []): int
+    {
+        $data = $this->filterFillable($data);
+
+        if (!$this->beforeSave($data, false)) {
+            return 0;
+        }
+
+        $set = [];
+        $params = [];
+
+        // Prepare SET clause with prefixed params to avoid collision
+        foreach ($data as $key => $value) {
+            $set[] = "{$key} = :update_{$key}";
+            $params["update_{$key}"] = $value;
+        }
+
+        $setClause = implode(', ', $set);
+
+        // Prepare WHERE clause
+        $where = [];
+        foreach ($conditions as $key => $value) {
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $key)) {
+                throw new \InvalidArgumentException("Invalid condition key: {$key}");
+            }
+            $where[] = "{$key} = :where_{$key}";
+            $params["where_{$key}"] = $value;
+        }
+
+        $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+
+        $sql = "UPDATE {$this->table} SET {$setClause} {$whereClause}";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            Database::logQuery($sql, $params);
+
+            return $stmt->rowCount();
+        } catch (\PDOException $e) {
+            Database::logQueryError($e, $sql, $params);
+            throw $e;
+        }
+    }
+
+    /**
      * Delete record by ID
      */
-    public function delete(int|string $id): bool
+    public function delete(int|string|array $id): bool
     {
         if (!$this->beforeDelete($id)) {
             return false;
         }
 
-        $sql = "DELETE FROM {$this->table} WHERE {$this->primaryKey} = :id";
-        $params = ['id' => $id];
+        $conditions = $this->getPkConditions($id);
+        $where = [];
+        $params = [];
+        foreach ($conditions as $col => $val) {
+            $where[] = "{$col} = :pk_{$col}";
+            $params["pk_{$col}"] = $val;
+        }
+        $whereClause = implode(' AND ', $where);
+
+        $sql = "DELETE FROM {$this->table} WHERE {$whereClause}";
 
         try {
             $stmt = $this->db->prepare($sql);
@@ -380,31 +725,63 @@ abstract class ActiveRecord
     }
 
     /**
-     * Paginate results
+     * Paginate results with optional conditions
      */
-    public function paginate(int $page = 1, int $perPage = 10): array
+    public function paginate(int $page = 1, int $perPage = 10, array $conditions = [], string $orderBy = null): array
     {
         $offset = ($page - 1) * $perPage;
 
-        // Cache total count for 5 minutes to avoid expensive COUNT(*) on every request
-        $cacheKey = "table_count:{$this->table}";
-        $total = Cache::remember($cacheKey, 300, function () {
-            $countSql = "SELECT COUNT(*) as total FROM {$this->table}";
+        $where = [];
+        $params = [];
+
+        foreach ($conditions as $key => $value) {
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $key)) {
+                throw new \InvalidArgumentException("Invalid condition key: {$key}");
+            }
+            $where[] = "{$key} = :{$key}";
+            $params[$key] = $value;
+        }
+
+        $whereClause = !empty($where) ? ' WHERE ' . implode(' AND ', $where) : '';
+
+        // Cache total count for 5 minutes
+        $cacheKey = "table_count:{$this->table}" . ($whereClause ? md5($whereClause . serialize($params)) : '');
+        $total = Cache::remember($cacheKey, 300, function () use ($whereClause, $params) {
+            $countSql = "SELECT COUNT(*) as total FROM {$this->table}{$whereClause}";
             $countStmt = $this->db->prepare($countSql);
-            $countStmt->execute();
-            Database::logQuery($countSql);
+            $countStmt->execute($params);
+            Database::logQuery($countSql, $params);
             return $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
         });
 
         // Get paginated data
-        $sql = "SELECT * FROM {$this->table} LIMIT :limit OFFSET :offset";
+        $orderClause = '';
+        $orderBy = $orderBy ?: $this->defaultOrder;
+        if ($orderBy) {
+            $orderClause = " ORDER BY {$orderBy}";
+        } elseif (is_string($this->primaryKey)) {
+            $orderClause = " ORDER BY {$this->primaryKey} DESC";
+        }
+
+        $sql = "SELECT * FROM {$this->table}{$whereClause}{$orderClause} LIMIT :limit OFFSET :offset";
         $stmt = $this->db->prepare($sql);
+
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(":{$key}", $value);
+        }
+
         $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
-        Database::logQuery($sql, ['limit' => $perPage, 'offset' => $offset]);
+
+        $logParams = array_merge($params, ['limit' => $perPage, 'offset' => $offset]);
+        Database::logQuery($sql, $logParams);
 
         $results = $this->hideFields($stmt->fetchAll(PDO::FETCH_ASSOC));
+
+        if (method_exists($this, 'afterLoad')) {
+            $this->afterLoad($results);
+        }
 
         if (!empty($this->with) && !empty($results)) {
             $this->loadRelations($results);
@@ -554,6 +931,14 @@ abstract class ActiveRecord
     }
 
     /**
+     * Lifecycle Hook: Called after records are loaded from database
+     */
+    public function afterLoad(array &$items): void
+    {
+        // Override in model
+    }
+
+    /**
      * Lifecycle Hook: Called after save (create/update)
      */
     protected function afterSave(bool $insert, array $data): void
@@ -564,7 +949,7 @@ abstract class ActiveRecord
     /**
      * Lifecycle Hook: Called before delete
      */
-    protected function beforeDelete(int|string $id): bool
+    protected function beforeDelete(int|string|array $id): bool
     {
         return true;
     }
@@ -572,7 +957,7 @@ abstract class ActiveRecord
     /**
      * Lifecycle Hook: Called after delete
      */
-    protected function afterDelete(int|string $id): void
+    protected function afterDelete(int|string|array $id): void
     {
         // Override in model
     }

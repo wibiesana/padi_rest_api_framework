@@ -63,11 +63,13 @@ class Auth
         self::init();
 
         try {
+            // Set leeway to 60 seconds to account for clock skew
+            JWT::$leeway = 60;
             return JWT::decode($token, new Key(self::$secret, self::$algorithm));
         } catch (Exception $e) {
             // Log JWT verification failures if in debug mode
             if (Env::get('APP_DEBUG') === 'true') {
-                error_log("JWT Verification failed: " . $e->getMessage());
+                error_log("[Auth] JWT Verification failed: " . $e->getMessage() . " - Token: " . substr($token, 0, 10) . "...");
             }
             return null;
         }

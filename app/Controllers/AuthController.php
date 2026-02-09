@@ -102,7 +102,7 @@ class AuthController extends Controller
         }
 
         // Check user status
-        if ($user['status'] !== 'active') {
+        if (!$this->model->isActive($user)) {
             throw new \Exception('Account is not active', 401);
         }
 
@@ -112,18 +112,34 @@ class AuthController extends Controller
         $user['last_login_at'] = $now; // Update in memory to avoid extra query
 
         // Check if remember me is requested
-        $rememberMe = isset($validated['remember_me']) &&
-            in_array(strtolower($validated['remember_me']), ['true', '1', 'yes', 'on']);
+        $rememberMeInput = $validated['remember_me'] ?? null;
+        if ($rememberMeInput === null) {
+            $rememberMeInput = $this->request->input('remember_me');
+        }
+
+        $rememberMe = false;
+        if ($rememberMeInput !== null) {
+            if (is_bool($rememberMeInput)) {
+                $rememberMe = $rememberMeInput;
+            } else {
+                $rememberMe = in_array(strtolower((string)$rememberMeInput), ['true', '1', 'yes', 'on']);
+            }
+        }
 
         // Set token expiration based on remember me
-        $expiration = $rememberMe ? (365 * 24 * 60 * 60) : 3600; // 365 days (1 year) for mobile apps, 1 hour default
+        // 1 year = 31536000 seconds
+        $expiration = $rememberMe ? 31536000 : 3600;
+
+        if (\Core\Env::get('APP_DEBUG') === 'true') {
+            error_log("[Auth] Login request - User: " . $user['username'] . ", Remember Me: " . ($rememberMe ? 'YES' : 'NO') . ", Expiration: " . $expiration);
+        }
 
         $token = \Core\Auth::generateToken([
             'user_id' => $user['id'],
             'email' => $user['email'],
             'role' => $user['role'],
             'status' => $user['status']
-        ], $expiration);
+        ], (int)$expiration);
 
         // Generate and store remember token if requested
         $rememberToken = null;

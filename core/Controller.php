@@ -37,12 +37,22 @@ abstract class Controller
         $validator = new Validator($this->request->all(), $rules, $messages);
 
         if (!$validator->validate()) {
-            $this->response->json([
+            $response = [
                 'success' => false,
                 'message' => 'Validation failed',
                 'message_code' => 'VALIDATION_FAILED',
                 'errors' => $validator->errors()
-            ], 422);
+            ];
+
+            if (Env::get('APP_DEBUG', false) === 'true') {
+                $response['debug'] = [
+                    'input' => $this->request->all(),
+                    'content_type' => $this->request->header('Content-Type'),
+                    'raw_input' => file_get_contents('php://input')
+                ];
+            }
+
+            $this->response->json($response, 422);
             exit; // Force exit to prevent further execution
         }
 

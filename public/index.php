@@ -19,6 +19,29 @@ function debug_log(string $message, string $level = 'info'): void
 // Load environment variables from .env file
 Core\Env::load(__DIR__ . '/../.env');
 
+// Handle CORS early
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$isDevelopment = Core\Env::get('APP_ENV') === 'development';
+$allowedOrigins = array_filter(explode(',', Core\Env::get('CORS_ALLOWED_ORIGINS', '')));
+
+if (!empty($origin)) {
+    if ($isDevelopment || in_array($origin, $allowedOrigins)) {
+        header("Access-Control-Allow-Origin: {$origin}");
+        header('Access-Control-Allow-Credentials: true');
+    }
+} elseif ($isDevelopment) {
+    header('Access-Control-Allow-Origin: *');
+}
+
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Response-Format, Accept, Origin');
+
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 // Initialize Debug (if enabled)
 // Debug class not implemented yet
 // if (class_exists('Core\\Debug') && Core\\Debug::isEnabled()) {

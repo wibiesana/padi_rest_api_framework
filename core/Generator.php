@@ -11,6 +11,7 @@ namespace Core;
 class Generator
 {
     private string $baseDir;
+    private $db;
 
     /**
      * Protected tables that should not be auto-generated
@@ -25,6 +26,7 @@ class Generator
     public function __construct()
     {
         $this->baseDir = dirname(__DIR__);
+        $this->db = Database::connection();
     }
 
     /**
@@ -136,6 +138,95 @@ class Generator
     }
 
     /**
+     * Generate API Resource
+     */
+    public function generateResource(string $modelName, array $options = []): bool
+    {
+        $tableName = $this->modelNameToTableName($modelName);
+        $resourceName = $modelName . 'Resource';
+        $namespace = $options['resource_namespace'] ?? 'App\\Resources';
+
+        // 1. Get columns
+        $columns = $this->getTableColumns($tableName);
+
+        // Ensure ID is included in Resource (as requested)
+        $schema = $this->getTableSchema($tableName);
+        if (array_key_exists('id', $schema)) {
+            array_unshift($columns, 'id');
+        }
+
+        // 2. Get relations
+        $foreignKeys = $this->getTableForeignKeys($tableName);
+        $relations = [];
+
+        foreach ($foreignKeys as $fk) {
+            $column = $fk['COLUMN_NAME'];
+            $relationNameBase = $column;
+            if (substr($relationNameBase, -3) === '_id') {
+                $relationNameBase = substr($relationNameBase, 0, -3);
+            }
+            $methodName = $this->snakeToCamel($relationNameBase);
+            $relations[$methodName] = [
+                'column' => $column,
+                'table' => $fk['REFERENCED_TABLE_NAME']
+            ];
+        }
+
+        // 3. Generate Template
+        $template = $this->getResourceTemplate($resourceName, $namespace, $columns, $relations);
+
+        $resourceDir = $this->baseDir . '/app/Resources';
+        if (!is_dir($resourceDir)) mkdir($resourceDir, 0755, true);
+
+        $filePath = $resourceDir . '/' . $resourceName . '.php';
+
+        if (file_exists($filePath) && !($options['force'] ?? false)) {
+            echo "ℹ️  Resource {$resourceName} already exists. Skipping.\n";
+        } else {
+            file_put_contents($filePath, $template);
+            echo "✓ Resource {$resourceName} created successfully at {$filePath}\n";
+        }
+
+        return true;
+    }
+
+    private function getResourceTemplate(string $resourceName, string $namespace, array $columns, array $relations): string
+    {
+        $fieldsStr = "";
+        foreach ($columns as $col) {
+            $fieldsStr .= "            '{$col}' => \$this->{$col},\n";
+        }
+
+        $relationsStr = "\n            // Relations\n";
+        $flattenedStr = "\n            // Flattened Fields\n";
+
+        foreach ($relations as $method => $relationData) {
+            $relationsStr .= "            '{$method}' => \$this->whenLoaded('{$method}'),\n";
+
+            $displayCol = $this->getDisplayColumn($relationData['table']);
+            $flattenedStr .= "            '{$method}_name' => \$this->{$method}['{$displayCol}'] ?? null,\n";
+        }
+
+        return <<<PHP
+<?php
+
+namespace {$namespace};
+
+use Core\Resource;
+
+class {$resourceName} extends Resource
+{
+    public function toArray(\$request): array
+    {
+        return [
+{$fieldsStr}{$relationsStr}{$flattenedStr}
+        ];
+    }
+}
+PHP;
+    }
+
+    /**
      * Generate Routes for a resource
      */
     public function generateRoutes(string $resourceName, array $options = []): string
@@ -177,17 +268,22 @@ class Generator
         echo "1. Generating Model...\n";
         $this->generateModel($tableName, $options);
 
+
         // Generate Controller
         echo "\n2. Generating Controller...\n";
         $modelName = $this->tableNameToModelName($tableName);
         $this->generateController($modelName, $options);
 
+        // Generate Resource
+        echo "\n3. Generating Resource...\n";
+        $this->generateResource($modelName, $options);
+
         // Generate Routes
-        echo "\n3. Generating Routes...\n";
+        echo "\n4. Generating Routes...\n";
         $this->generateRoutes($tableName, $options);
 
         // Generate Postman Collection
-        echo "\n4. Generating Postman Collection...\n";
+        echo "\n5. Generating Postman Collection...\n";
         $this->generatePostmanCollection($tableName, $options);
 
         echo "\n" . str_repeat('=', 60) . "\n";
@@ -402,6 +498,53 @@ class Generator
     }
 
     /**
+     * Get foreign keys for a table
+     */
+    private function getTableForeignKeys(string $tableName): array
+    {
+        $sql = "
+            SELECT 
+                COLUMN_NAME, 
+                REFERENCED_TABLE_NAME, 
+                REFERENCED_COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
+            WHERE TABLE_SCHEMA = DATABASE() 
+              AND TABLE_NAME = :table 
+              AND REFERENCED_TABLE_NAME IS NOT NULL
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['table' => $tableName]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+
+
+    /**
+     * Get the display column for a table (name, title, username, etc.)
+     */
+    private function getDisplayColumn(string $tableName): string
+    {
+        $columns = $this->getTableColumns($tableName);
+
+        // Special case for users table - prioritize username because 'name' might not exist or be unused
+        if ($tableName === 'users' && in_array('username', $columns)) {
+            return 'username';
+        }
+
+        // Priority list of display columns
+        $candidates = ['username', 'name', 'nama', 'title', 'judul', 'email', 'full_name', 'description', 'code', 'id'];
+
+        foreach ($candidates as $candidate) {
+            if (in_array($candidate, $columns)) {
+                return $candidate;
+            }
+        }
+
+        return 'id'; // Fallback
+    }
+
+    /**
      * Get Base Model template
      */
     private function getBaseModelTemplate(string $modelName, string $tableName, array $fillable, array $hidden, string $namespace): string
@@ -430,37 +573,168 @@ class Generator
             $auditConfig .= "    protected string \$timestampFormat = '{$timestampFormat}';\n";
         }
 
-        // Generate smart search query using fillable columns
-        // Only use likely text columns for search
-        $searchableColumns = [];
-        $textColumnKeywords = ['name', 'title', 'description', 'content', 'email', 'username', 'category', 'type', 'status', 'code', 'sku'];
+        // Generate relationships and join logic
+        $relationsStr = "";
+        $joins = [];
+
+        // Arrays to hold search conditions and bindings
+        // Structure: ['col' => 'table.col', 'param' => ':p1']
+        $searchConfig = [];
+        $paramCounter = 0;
+
+        // Get actual Foreign Keys from Database
+        $foreignKeys = $this->getTableForeignKeys($tableName);
+        $joinedTables = []; // Track used aliases
+
+        // 1. Analyze Foreign Keys for Relationships & Search Joins
+        foreach ($foreignKeys as $fk) {
+            $column = $fk['COLUMN_NAME'];
+            $relatedTable = $fk['REFERENCED_TABLE_NAME'];
+
+            // Generate relation name
+            $relationNameBase = $column;
+            if (substr($relationNameBase, -3) === '_id') {
+                $relationNameBase = substr($relationNameBase, 0, -3);
+            }
+            $methodName = $this->snakeToCamel($relationNameBase);
+            $relatedModel = $this->tableNameToModelName($relatedTable);
+
+            // Determine unique alias
+            $alias = $relatedTable;
+            if (isset($joinedTables[$alias]) || $alias === $tableName) {
+                // If table already joined or matches main table, use unique alias
+                $alias = $relatedTable . '_' . $column;
+            }
+            $joinedTables[$alias] = true;
+
+            // Add belongsTo relation
+            $relationsStr .= "\n    public function {$methodName}()\n";
+            $relationsStr .= "    {\n";
+            $relationsStr .= "        return \$this->belongsTo(\\App\\Models\\{$relatedModel}::class, '{$column}');\n";
+            $relationsStr .= "    }\n";
+
+            // Add join for search with Alias
+            $joins[] = "LEFT JOIN {$relatedTable} AS {$alias} ON {$tableName}.{$column} = {$alias}.id";
+
+            // Identify display column for the related table
+            $displayCol = $this->getDisplayColumn($relatedTable);
+
+            // Add related name to search scope using Alias
+            $paramCounter++;
+            $searchConfig[] = [
+                'clause' => "{$alias}.{$displayCol} LIKE :k{$paramCounter}",
+                'param' => ":k{$paramCounter}"
+            ];
+        }
+
+        // 2. Analyze Local Text Columns for Search
+        $textColumnKeywords = ['name', 'title', 'description', 'content', 'email', 'username', 'category', 'type', 'status', 'code', 'sku', 'nis', 'nisn'];
 
         foreach ($fillable as $column) {
-            // Include column if it contains common text keywords
             foreach ($textColumnKeywords as $keyword) {
                 if (stripos($column, $keyword) !== false) {
-                    $searchableColumns[] = $column;
+                    $paramCounter++;
+                    $searchConfig[] = [
+                        'clause' => "{$tableName}.{$column} LIKE :k{$paramCounter}",
+                        'param' => ":k{$paramCounter}"
+                    ];
                     break;
                 }
             }
         }
 
-        // If no searchable columns found, use first fillable column as fallback
-        if (empty($searchableColumns) && !empty($fillable)) {
-            $searchableColumns = [reset($fillable)];
+        // Fallback if no search fields found
+        if (empty($searchConfig) && !empty($fillable)) {
+            $paramCounter++;
+            $searchConfig[] = [
+                'clause' => "{$tableName}.id LIKE :k{$paramCounter}",
+                'param' => ":k{$paramCounter}"
+            ];
         }
 
-        // Build WHERE clause
-        $whereConditions = [];
-        $paramBindings = [];
-        foreach ($searchableColumns as $index => $column) {
-            $paramName = "keyword" . ($index > 0 ? ($index + 1) : '');
-            $whereConditions[] = "{$column} LIKE :{$paramName}";
-            $paramBindings[] = "            '{$paramName}' => \$searchTerm";
+        // Build SQL parts - Align glue with indentation (21 spaces approx)
+        $whereClauses = array_column($searchConfig, 'clause');
+        $whereClause = implode(" OR ", $whereClauses);
+        $joinClause = implode("\n                     ", $joins);
+
+        // Build binding code for searchPaginate (PDO execution array)
+        $executeBindings = [];
+        foreach ($searchConfig as $conf) {
+            $key = ltrim($conf['param'], ':');
+            $executeBindings[] = "'{$key}' => \$searchTerm";
+        }
+        $executeStr = implode(",\n            ", $executeBindings);
+
+        // Single line version for logging comments to be safe
+        $executeStrSingle = implode(", ", $executeBindings);
+
+        // Build bindValue code (for standard prepared statement)
+        $bindValueStr = "";
+        foreach ($searchConfig as $conf) {
+            $bindValueStr .= "        \$stmt->bindValue('{$conf['param']}', \$searchTerm);\n";
         }
 
-        $whereClause = !empty($whereConditions) ? implode("\n                   OR ", $whereConditions) : "id LIKE :keyword";
-        $paramsStr = !empty($paramBindings) ? implode(",\n", $paramBindings) : "            'keyword' => \$searchTerm";
+        // Build Params string for simple search method (query helper)
+        $paramsStr = implode(",\n            ", $executeBindings);
+
+        // searchPaginate method
+        $searchPaginateMethod = <<<PHP
+    /**
+     * Search with pagination and joins
+     */
+    public function searchPaginate(string \$keyword, int \$page = 1, int \$perPage = 10): array
+    {
+        \$searchTerm = "%\$keyword%";
+        \$offset = (\$page - 1) * \$perPage;
+
+        // 1. Get Total Count
+        \$countSql = "SELECT COUNT(*) as total 
+                     FROM {\$this->table} 
+                     {$joinClause}
+                     WHERE {$whereClause}";
+                     
+        \$countStmt = \$this->db->prepare(\$countSql);
+        \$countStmt->execute([
+            {$executeStr}
+        ]);
+        // Database::logQuery(\$countSql, [{$executeStrSingle}]); // Optional logging
+
+        \$total = \$countStmt->fetch(\PDO::FETCH_ASSOC)['total'];
+
+        // 2. Get Data
+        \$sql = "SELECT {\$this->table}.* 
+                FROM {\$this->table} 
+                {$joinClause}
+                WHERE {$whereClause}
+                ORDER BY {\$this->table}.{\$this->primaryKey} DESC
+                LIMIT :limit OFFSET :offset";
+
+        \$stmt = \$this->db->prepare(\$sql);
+{$bindValueStr}        \$stmt->bindValue(':limit', \$perPage, \PDO::PARAM_INT);
+        \$stmt->bindValue(':offset', \$offset, \PDO::PARAM_INT);
+        \$stmt->execute();
+        // Database::logQuery(\$sql, ['keyword' => \$searchTerm]); // Optional logging
+        
+        \$results = \$stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // 3. Eager load if needed (optional)
+        if (!empty(\$results)) {
+            \$this->loadRelations(\$results);
+        }
+
+        return [
+            'data' => \$this->hideFields(\$results),
+            'meta' => [
+                'total' => (int)\$total,
+                'per_page' => \$perPage,
+                'current_page' => \$page,
+                'last_page' => (int)ceil(\$total / \$perPage),
+                'from' => \$offset + 1,
+                'to' => min(\$offset + \$perPage, \$total)
+            ]
+        ];
+    }
+PHP;
 
         return <<<PHP
 <?php
@@ -479,27 +753,44 @@ class {$modelName} extends ActiveRecord
     ];
     
     protected array \$hidden = [{$hiddenStr}];
-{$auditConfig}    
+{$auditConfig}
+{$relationsStr}
+{$searchPaginateMethod}
+
     /**
-     * Search {$tableName}
+     * Search {$tableName} (simple limit)
      */
     public function search(string \$keyword): array
     {
         \$searchTerm = "%\$keyword%";
         
-        \$sql = "SELECT * FROM {\$this->table} 
+        \$sql = "SELECT {\$this->table}.* FROM {\$this->table} 
+                {$joinClause}
                 WHERE {$whereClause}
                 LIMIT 100";
         
-        return \$this->query(\$sql, [
-{$paramsStr}
+        \$results = \$this->query(\$sql, [
+            {$paramsStr}
         ]);
+
+        if (!empty(\$results)) {
+            \$this->loadRelations(\$results);
+        }
+
+        return \$results;
     }
 }
 
 PHP;
     }
 
+    /**
+     * Helper to convert snake_case to camelCase
+     */
+    private function snakeToCamel($string)
+    {
+        return lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $string))));
+    }
 
     /**
      * Get Concrete Model template
@@ -515,7 +806,10 @@ use {$baseNamespace}\\{$modelName} as BaseModel;
 
 class {$modelName} extends BaseModel
 {
-    // Add custom model logic here
+    /**
+     * Automatically eager load these relations on every query.
+     */
+    // protected array \$with = [];
 }
 
 PHP;
@@ -527,6 +821,7 @@ PHP;
     private function getBaseControllerTemplate(string $modelName, string $controllerName, string $namespace, string $modelNamespace, array $validationRules): string
     {
         $modelVar = lcfirst($modelName);
+        $tableName = $this->modelNameToTableName($modelName); // Infer table name
         $resourceName = strtolower($modelName);
 
         $storeRules = "";
@@ -534,7 +829,6 @@ PHP;
 
         foreach ($validationRules as $column => $rule) {
             $storeRules .= "            '{$column}' => '{$rule}',\n";
-
             // For update, unique rules need to ignore current ID
             if (strpos($rule, 'unique:') !== false) {
                 $updateRules .= "            '{$column}' => '{$rule},' . \$id,\n";
@@ -546,6 +840,31 @@ PHP;
         $storeRules = rtrim($storeRules, ",\n");
         $updateRules = rtrim($updateRules, ",\n");
 
+        // Autodetect relations for index eager loading via Real Foreign Keys
+        $withRelations = [];
+        $foreignKeys = $this->getTableForeignKeys($tableName);
+
+        foreach ($foreignKeys as $fk) {
+            $column = $fk['COLUMN_NAME'];
+            // Relations logic matching Model generation
+            $relationNameBase = $column;
+            if (substr($relationNameBase, -3) === '_id') {
+                $relationNameBase = substr($relationNameBase, 0, -3);
+            }
+            $relName = $this->snakeToCamel($relationNameBase);
+            // Determine display column for the referenced table
+            $displayCol = $this->getDisplayColumn($fk['REFERENCED_TABLE_NAME']);
+
+            // Default to id,displayCol for safety and performance
+            $withRelations[] = "'{$relName}:id,{$displayCol}'";
+        }
+
+        $withRelationsStr = "";
+        if (!empty($withRelations)) {
+            $arrayContent = implode(", ", $withRelations);
+            $withRelationsStr = "\n        // Auto-generated eager loading\n        \$this->model->with([{$arrayContent}]);\n";
+        }
+
         return <<<PHP
 <?php
 
@@ -553,6 +872,7 @@ namespace {$namespace};
 
 use Core\Controller;
 use {$modelNamespace}\\{$modelName};
+use App\Resources\\{$modelName}Resource;
 
 class {$controllerName} extends Controller
 {
@@ -569,7 +889,7 @@ class {$controllerName} extends Controller
      * GET /{$resourceName}s
      */
     public function index()
-    {
+    {{$withRelationsStr}
         \$page = max(1, (int)\$this->request->query('page', 1)); // Min page 1
         \$perPage = min(100, max(1, (int)\$this->request->query('per-page', 10))); // Max 100 per page
         \$search = \$this->request->query('search');
@@ -577,10 +897,12 @@ class {$controllerName} extends Controller
         if (\$search) {
             // Limit search query length to prevent abuse
             \$search = substr(\$search, 0, 255);
-            return \$this->model->search(\$search);
+            \$result = \$this->model->searchPaginate(\$search, \$page, \$perPage);
+        } else {
+            \$result = \$this->model->paginate(\$page, \$perPage);
         }
-        
-        return \$this->model->paginate(\$page, \$perPage);
+
+        return {$modelName}Resource::collection(\$result);
     }
     
     /**
@@ -588,8 +910,12 @@ class {$controllerName} extends Controller
      * GET /{$resourceName}s/all
      */
     public function all()
-    {
-        return \$this->model::findQuery()->all();
+    {{$withRelationsStr}
+        \$search = \$this->request->query('search');
+        if (\$search) {
+             return {$modelName}Resource::collection(\$this->model->search(\$search));
+        }
+        return {$modelName}Resource::collection(\$this->model->all());
     }
     
     /**
@@ -598,14 +924,14 @@ class {$controllerName} extends Controller
      */
     public function show()
     {
-        \$id = \$this->request->param('id');
+        \$id = \$this->request->param('id');{$withRelationsStr}
         \${$resourceName} = \$this->model->find(\$id);
         
         if (!\${$resourceName}) {
             throw new \\Exception('{$modelName} not found', 404);
         }
         
-        return \${$resourceName};
+        return {$modelName}Resource::make(\${$resourceName});
     }
     
     /**
@@ -620,8 +946,10 @@ class {$controllerName} extends Controller
         
         try {
             \$id = \$this->model->create(\$validated);
+            // Auto-generated eager loading
+            {$withRelationsStr}
             \${$resourceName} = \$this->model->find(\$id);
-            return \$this->created(\${$resourceName});
+            return \$this->created({$modelName}Resource::make(\${$resourceName}));
         } catch (\\PDOException \$e) {
             \$this->databaseError('Failed to create {$resourceName}', \$e);
         }
@@ -646,7 +974,9 @@ class {$controllerName} extends Controller
         
         try {
             \$this->model->update(\$id, \$validated);
-            return \$this->model->find(\$id);
+             // Auto-generated eager loading
+            {$withRelationsStr}
+            return {$modelName}Resource::make(\$this->model->find(\$id));
         } catch (\\PDOException \$e) {
             \$this->databaseError('Failed to update {$resourceName}', \$e);
         }
@@ -673,7 +1003,6 @@ class {$controllerName} extends Controller
         }
     }
 }
-
 PHP;
     }
 
@@ -823,22 +1152,7 @@ PHP;
                     ],
                     'response' => []
                 ],
-                [
-                    'name' => "Search {$modelName}s",
-                    'request' => [
-                        'method' => 'GET',
-                        'header' => [],
-                        'url' => [
-                            'raw' => "{{base_url}}{$apiPrefix}/{$prefix}?search=keyword",
-                            'host' => ['{{base_url}}'],
-                            'path' => [ltrim($apiPrefix, '/'), $prefix],
-                            'query' => [
-                                ['key' => 'search', 'value' => 'keyword']
-                            ]
-                        ]
-                    ],
-                    'response' => []
-                ],
+
                 [
                     'name' => "Get All {$modelName}s (No Pagination)",
                     'request' => [

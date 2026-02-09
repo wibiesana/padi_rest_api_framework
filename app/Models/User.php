@@ -2,10 +2,61 @@
 
 namespace App\Models;
 
-use App\Models\Base\User as BaseModel;
+use Core\ActiveRecord;
 
-class User extends BaseModel
+
+class User extends ActiveRecord
 {
+    protected string $table = 'users';
+    protected string|array $primaryKey = 'id';
+
+    protected array $fillable = [
+        'username',
+        'email',
+        'password',
+        'role',
+        'status',
+        'email_verified_at',
+        'remember_token',
+        'last_login_at'
+    ];
+
+    protected array $hidden = ['password'];
+
+    /**
+     * Audit fields detected: created_at, updated_at, created_by, updated_by
+     * These will be auto-populated by ActiveRecord
+     */
+    protected bool $useAudit = true;
+
+    /**
+     * Timestamp format: 'datetime'
+     * 'datetime' = Y-m-d H:i:s (DATETIME/TIMESTAMP columns)
+     * 'unix' = integer timestamp (INT/BIGINT columns)
+     */
+    protected string $timestampFormat = 'datetime';
+
+    /**
+     * Search users
+     */
+    public function search(string $keyword): array
+    {
+        $searchTerm = "%$keyword%";
+
+        $sql = "SELECT * FROM {$this->table} 
+                WHERE username LIKE :keyword
+                   OR email LIKE :keyword2
+                   OR status LIKE :keyword3
+                   OR email_verified_at LIKE :keyword4
+                LIMIT 100";
+
+        return $this->query($sql, [
+            'keyword' => $searchTerm,
+            'keyword2' => $searchTerm,
+            'keyword3' => $searchTerm,
+            'keyword4' => $searchTerm
+        ]);
+    }
     /**
      * Automatically hash password and set defaults before saving
      */
@@ -21,7 +72,7 @@ class User extends BaseModel
 
         // 2. Set defaults for new records only
         if ($insert) {
-            $data['status'] = $data['status'] ?? 'active';
+            $data['status'] = $data['status'] ?? 1;
             $data['role'] = $data['role'] ?? 'user';
         }
 
@@ -39,7 +90,7 @@ class User extends BaseModel
             'email' => 'required|string|max:255|email',
             'password' => 'required|string|min:8|max:255',
             'role' => 'string|max:50',
-            'status' => 'string|max:20|in:active,inactive,banned',
+            'status' => 'integer',
             'email_verified_at' => 'nullable',
             'remember_token' => 'string|max:100',
             'last_login_at' => 'nullable'
@@ -165,7 +216,11 @@ class User extends BaseModel
      */
     public function isActive(array $user): bool
     {
-        return isset($user['status']) && $user['status'] === 'active';
+        // Superadmin is always active, or status is 1/'active'
+        if (isset($user['role']) && $user['role'] === 'superadmin') {
+            return true;
+        }
+        return isset($user['status']) && ($user['status'] == 1 || $user['status'] === 'active');
     }
 
     /**

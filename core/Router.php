@@ -151,12 +151,6 @@ class Router
         $method = $request->method();
         $uri = rtrim($request->uri(), '/') ?: '/';
 
-        // Handle OPTIONS request for CORS
-        if ($method === 'OPTIONS') {
-            $response = new Response();
-            $response->status(200)->text('');
-            return;
-        }
 
         foreach ($this->routes as $route) {
             if ($route['method'] !== $method) {
@@ -233,8 +227,8 @@ class Router
             }
         }
 
-        // Auto-format response if result is returned
-        if ($result !== null) {
+        // Auto-format response if result is returned or status code is set
+        if ($result !== null || $request->getResponseStatusCode() !== null) {
             $this->formatResponse($result, $request);
         }
     }
@@ -245,10 +239,11 @@ class Router
     private function handleException(\Exception $e, Request $request): void
     {
         $response = new Response();
-        $statusCode = $e->getCode() ?: 500;
+        $statusCode = $e->getCode();
 
-        // Ensure status code is valid HTTP status code
-        if ($statusCode < 100 || $statusCode > 599) {
+        // Ensure status code is valid HTTP status code (integer between 100 and 599)
+        // PDOExceptions often return string error codes (SQLSTATE) which should be treated as 500
+        if (!is_int($statusCode) || $statusCode < 100 || $statusCode > 599) {
             $statusCode = 500;
         }
 

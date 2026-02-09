@@ -33,7 +33,7 @@ class ExampleRBACController extends Controller
 
         return [
             'total_users' => $this->model::findQuery()->count(),
-            'active_users' => $this->model::findQuery()->where('status = :status', ['status' => 'active'])->count(),
+            'active_users' => $this->model::findQuery()->where('status = :status', ['status' => 1])->count(),
             'total_teachers' => $this->model::findQuery()->where('role = :role', ['role' => 'teacher'])->count(),
             'total_students' => $this->model::findQuery()->where('role = :role', ['role' => 'student'])->count(),
         ];
@@ -132,7 +132,7 @@ class ExampleRBACController extends Controller
         ]);
 
         $validated['role'] = 'student';
-        $validated['status'] = 'active';
+        $validated['status'] = 1;
 
         $id = $this->model->create($validated);
 
