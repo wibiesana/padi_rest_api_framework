@@ -1,407 +1,198 @@
 # 🐳 Docker Deployment Guide
 
-**Padi REST API Framework with FrankenPHP**
+**Padi REST API Framework with FrankenPHP & Redis**
+
+Complete guide for deploying Padi REST API Framework using Docker with support for multiple deployment modes (Standard, Worker, and Full Stack with Nginx).
 
 ---
 
-## 📋 Prerequisites
+## 🏗️ Architecture & Modes
 
-- Docker 20.10+
-- Docker Compose 2.0+
+Tersedia **3 mode deployment** yang sudah dikonfigurasi untuk memenuhi berbagai kebutuhan skenario:
 
----
+| Mode           | Compose File                  | Best For                     | Performance           | Feature                            |
+| :------------- | :---------------------------- | :--------------------------- | :-------------------- | :--------------------------------- |
+| **Standard**   | `docker-compose.standard.yml` | Development / Testing        | Normal                | Auto-reload on code change         |
+| **Worker**     | `docker-compose.worker.yml`   | **Production (Recommended)** | ⚡ **10-100x Faster** | High concurrency, memory efficient |
+| **Full Stack** | `docker-compose.nginx.yml`    | Production with SSL/TLS      | ⚡ **10-100x Faster** | Nginx reverse proxy + SSL          |
 
-## 🚀 Quick Start (Development)
-
-### 1. Start Services
-
-```bash
-# Start all services (FrankenPHP + MySQL + phpMyAdmin)
-docker-compose up -d
-
-# View logs
-docker-compose logs -f app
-
-# Check status
-docker-compose ps
-```
-
-### 2. Access Services
-
-- **API:** http://localhost:8085
-- **phpMyAdmin:** http://localhost:8080
-  - Server: `mysql`
-  - Username: `root`
-  - Password: `root_password`
-
-### 3. Test API
-
-```bash
-# Health check
-curl http://localhost:8085/
-
-# Register user
-curl -X POST http://localhost:8085/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Test User",
-    "email": "test@example.com",
-    "password": "Test123!",
-    "password_confirmation": "Test123!"
-  }'
-```
-
-### 4. Stop Services
-
-```bash
-# Stop services
-docker-compose down
-
-# Stop and remove volumes (WARNING: deletes database!)
-docker-compose down -v
-```
+🎯 **Redis selalu terinstall** dan dikonfigurasi secara default di semua mode deployment!
 
 ---
 
-## 🏭 Production Deployment
+## 🚀 Quick Start
 
-### 1. Prepare Environment
+### 1. Setup Environment
 
 ```bash
 # Copy environment template
-cp .env.docker .env.production
+cp .env.docker .env
 
-# Edit .env.production and set:
-# - DB_PASSWORD (strong password)
-# - MYSQL_ROOT_PASSWORD (strong password)
-# - JWT_SECRET (64 characters, use: openssl rand -hex 32)
-# - APP_URL (your domain)
-# - CORS_ALLOWED_ORIGINS (your frontend domains)
+# Generate JWT Secret
+php -r "echo bin2hex(random_bytes(32));"
+# Paste result into .env: JWT_SECRET=...
 ```
 
-### 2. Prepare SSL Certificates
+### 2. Pilih dan Jalankan Mode
+
+#### 🔹 Standard Mode (Development)
 
 ```bash
-# Create SSL directory
-mkdir -p docker/nginx/ssl
-
-# Copy your SSL certificates
-cp /path/to/fullchain.pem docker/nginx/ssl/
-cp /path/to/privkey.pem docker/nginx/ssl/
-
-# Or use Let's Encrypt (recommended)
-# See: https://letsencrypt.org/getting-started/
+docker compose -f docker-compose.standard.yml up -d
 ```
 
-### 3. Update NGINX Configuration
+- **API:** http://localhost:8085
+- **Gunakan:** Saat mengembangkan fitur baru (mendukung auto-reload).
 
-Edit `docker/nginx/nginx.conf`:
-
-```nginx
-server_name api.yourdomain.com;  # Change to your domain
-```
-
-### 4. Build and Deploy
+#### ⚡ Worker Mode (Production)
 
 ```bash
-# Build production image
-docker-compose -f docker-compose.prod.yml build
-
-# Start production services
-docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
-
-# View logs
-docker-compose -f docker-compose.prod.yml logs -f
-
-# Check health
-curl https://api.yourdomain.com/
+docker compose -f docker-compose.worker.yml up -d
 ```
+
+- **API:** http://localhost:8085
+- **Gunakan:** Untuk performa maksimal di lingkungan produksi.
+- **Catatan:** Lakukan restart container setelah perubahan kode (`docker compose restart padi_worker`).
+
+#### 🔒 Full Stack Mode (Nginx + SSL)
+
+```bash
+# 1. Letakkan sertifikat di docker/nginx/ssl/ (fullchain.pem & privkey.pem)
+# 2. Update server_name di docker/nginx/nginx.conf
+docker compose -f docker-compose.nginx.yml up -d
+```
+
+- **API:** http://localhost (HTTP) atau https://localhost (HTTPS)
+- **Gunakan:** Deployment produksi dengan SSL dan Reverse Proxy.
 
 ---
 
-## 🛠️ Docker Commands
+## � Configuration
 
-### Container Management
+### Redis Cache (Default Enabled)
+
+Redis secara otomatis dikonfigurasi sebagai cache driver utama.
+
+```env
+CACHE_DRIVER=redis
+REDIS_HOST=redis
+REDIS_PORT=6379
+```
+
+**Test Redis Connection:**
 
 ```bash
-# Start services
-docker-compose up -d
-
-# Stop services
-docker-compose down
-
-# Restart services
-docker-compose restart
-
-# View logs
-docker-compose logs -f app
-docker-compose logs -f mysql
-
-# Execute commands in container
-docker-compose exec app bash
-docker-compose exec mysql mysql -u root -p
+# Sesuaikan nama file compose dengan mode yang Anda gunakan
+docker compose -f docker-compose.worker.yml exec padi_worker php scripts/test_redis.php
 ```
 
 ### Database Management
 
-```bash
-# Import SQL file
-docker-compose exec -T mysql mysql -u root -proot_password rest_api_db < backup.sql
-
-# Export database
-docker-compose exec mysql mysqldump -u root -proot_password rest_api_db > backup.sql
-
-# Access MySQL CLI
-docker-compose exec mysql mysql -u root -proot_password rest_api_db
-```
-
-### Application Commands
+Jika menggunakan container MySQL di Docker:
 
 ```bash
 # Run migrations
-docker-compose exec app php scripts/migrate.php migrate
+docker compose exec padi_app php scripts/migrate.php migrate
 
-# Generate CRUD
-docker-compose exec app php scripts/generate.php crud products --write
-
-# Clear cache
-docker-compose exec app rm -rf storage/cache/*
-
-# Check PHP version
-docker-compose exec app php -v
-
-# Install composer dependencies
-docker-compose exec app composer install
+# Export Database
+docker compose exec mysql mysqldump -u root -p rest_api_db > backup.sql
 ```
 
 ---
 
-## 📊 Performance Tuning
+## 🔄 Management Commands
 
-### FrankenPHP Worker Configuration
+| Action             | Command (Gunakan `-f <file>` sesuai mode) |
+| :----------------- | :---------------------------------------- |
+| **Start Services** | `docker compose up -d`                    |
+| **Stop Services**  | `docker compose down`                     |
+| **View Logs**      | `docker compose logs -f <service_name>`   |
+| **Check Status**   | `docker compose ps`                       |
+| **Rebuild Image**  | `docker compose build --no-cache`         |
+| **Shell Access**   | `docker compose exec <service_name> bash` |
 
-Edit `Dockerfile` to adjust worker settings:
+---
+
+## 📊 Performance & Scaling
+
+### FrankenPHP Worker Settings
+
+Ubah jumlah worker di `Dockerfile` untuk menangani traffic tinggi:
 
 ```dockerfile
-# Increase worker count for high traffic
-CMD ["frankenphp", "php-server", \
-     "--worker", "public/frankenphp-worker.php", \
-     "--listen", ":8085", \
-     "--workers", "4"]
+# Default: 4 workers
+CMD ["frankenphp", "php-server", "--worker", "public/frankenphp-worker.php", "--workers", "10"]
 ```
 
-### MySQL Optimization
+### Horizontal Scaling
 
-Edit `docker-compose.yml`:
-
-```yaml
-mysql:
-  command: --max_connections=200 --innodb_buffer_pool_size=512M
-```
-
-### NGINX Rate Limiting
-
-Edit `docker/nginx/nginx.conf`:
-
-```nginx
-# Adjust rate limit
-limit_req_zone $binary_remote_addr zone=api_limit:10m rate=20r/s;
+```bash
+# Memperbanyak instance app (hanya di mode yang mendukung load balancer)
+docker compose up -d --scale padi_app=3
 ```
 
 ---
 
-## 🔍 Monitoring
+## �️ Security Best Practices
 
-### Health Checks
-
-```bash
-# Check container health
-docker-compose ps
-
-# API health
-curl http://localhost:8085/
-
-# MySQL health
-docker-compose exec mysql mysqladmin ping -h localhost -u root -proot_password
-```
-
-### Resource Usage
-
-```bash
-# Container stats
-docker stats
-
-# Disk usage
-docker system df
-
-# Logs size
-docker-compose logs --tail=100 app
-```
-
----
-
-## 🐛 Troubleshooting
-
-### Container Won't Start
-
-```bash
-# Check logs
-docker-compose logs app
-
-# Check configuration
-docker-compose config
-
-# Rebuild image
-docker-compose build --no-cache app
-```
-
-### Database Connection Failed
-
-```bash
-# Check MySQL is running
-docker-compose ps mysql
-
-# Check MySQL logs
-docker-compose logs mysql
-
-# Test connection
-docker-compose exec app php -r "new PDO('mysql:host=mysql;dbname=rest_api_db', 'api_user', 'secret_password');"
-```
-
-### Permission Issues
-
-```bash
-# Fix storage permissions
-docker-compose exec app chmod -R 775 storage
-docker-compose exec app chown -R www-data:www-data storage
-```
-
-### FrankenPHP Worker Issues
-
-```bash
-# Check worker is running
-docker-compose exec app ps aux | grep frankenphp
-
-# Restart worker
-docker-compose restart app
-
-# Check worker logs
-docker-compose logs -f app
-```
-
----
-
-## 🔒 Security Best Practices
-
-### Production Checklist
-
-- [ ] Use strong passwords (DB_PASSWORD, MYSQL_ROOT_PASSWORD)
-- [ ] Generate new JWT_SECRET (64+ characters)
-- [ ] Set APP_ENV=production and APP_DEBUG=false
-- [ ] Configure CORS_ALLOWED_ORIGINS with specific domains
-- [ ] Use SSL/TLS certificates (Let's Encrypt recommended)
-- [ ] Enable NGINX rate limiting
-- [ ] Restrict database access (don't expose port 3306)
-- [ ] Use Docker secrets for sensitive data
-- [ ] Regular backups of database
-- [ ] Monitor container logs
-
-### Using Docker Secrets (Recommended)
-
-```yaml
-# docker-compose.prod.yml
-services:
-  app:
-    secrets:
-      - jwt_secret
-      - db_password
-    environment:
-      - JWT_SECRET_FILE=/run/secrets/jwt_secret
-      - DB_PASS_FILE=/run/secrets/db_password
-
-secrets:
-  jwt_secret:
-    file: ./secrets/jwt_secret.txt
-  db_password:
-    file: ./secrets/db_password.txt
-```
+- ✅ **Disable Debug:** Pastikan `APP_DEBUG=false` di `.env` produksi.
+- ✅ **Strong Secret:** Gunakan `JWT_SECRET` minimal 64 karakter.
+- ✅ **File Permissions:**
+  ```bash
+  docker compose exec padi_app chown -R www-data:www-data storage
+  docker compose exec padi_app chmod -R 775 storage
+  ```
+- ✅ **SSL/TLS:** Selalu gunakan HTTPS di lingkungan produksi.
+- ✅ **Firewall:** Jangan ekspose port database (3306) ke publik.
 
 ---
 
 ## 📦 Backup & Restore
 
-### Backup
+### Database Backup
 
 ```bash
-# Backup database
-docker-compose exec mysql mysqldump -u root -proot_password rest_api_db | gzip > backup_$(date +%Y%m%d).sql.gz
-
-# Backup storage
-tar -czf storage_backup_$(date +%Y%m%d).tar.gz storage/
-
-# Backup everything
-docker-compose exec mysql mysqldump -u root -proot_password rest_api_db > backup.sql
-tar -czf full_backup_$(date +%Y%m%d).tar.gz backup.sql storage/ .env
+docker compose exec mysql mysqldump -u root -proot_password rest_api_db | gzip > backup_$(date +%Y%m%d).sql.gz
 ```
 
-### Restore
+### Database Restore
 
 ```bash
-# Restore database
-gunzip < backup_20260123.sql.gz | docker-compose exec -T mysql mysql -u root -proot_password rest_api_db
-
-# Restore storage
-tar -xzf storage_backup_20260123.tar.gz
+gunzip < backup_file.sql.gz | docker compose exec -T mysql mysql -u root -proot_password rest_api_db
 ```
 
 ---
 
-## 🚀 Scaling
+## � Troubleshooting
 
-### Horizontal Scaling
+### 1. Redis Connection Failed
 
-```bash
-# Scale app containers
-docker-compose up -d --scale app=3
+- **Cek Status:** `docker compose ps redis`
+- **Solusi:** Pastikan `REDIS_HOST=redis` di `.env`.
 
-# Use load balancer (NGINX)
-# Update nginx.conf with multiple upstream servers
-```
+### 2. Kode Tidak Berubah (Worker Mode)
 
-### Vertical Scaling
+- **Sebab:** Worker mode meng-cache kode di memory.
+- **Solusi:** Restart container: `docker compose restart padi_worker`.
 
-```yaml
-# docker-compose.yml
-services:
-  app:
-    deploy:
-      resources:
-        limits:
-          cpus: "2"
-          memory: 2G
-        reservations:
-          cpus: "1"
-          memory: 1G
-```
+### 3. Permission Denied di Folder Storage
+
+- **Solusi:** Jalankan command `chown` dan `chmod` di dalam container (lihat bagian Security).
+
+### 4. Port 8085 Sudah Digunakan
+
+- **Solusi:** Ubah port mapping di file `docker-compose.yml` yang Anda gunakan.
 
 ---
 
-## 📚 Additional Resources
+## 📚 Resources
 
-- [FrankenPHP Documentation](https://frankenphp.dev/)
-- [Docker Documentation](https://docs.docker.com/)
-- [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [NGINX Documentation](https://nginx.org/en/docs/)
-
----
-
-## 🆘 Getting Help
-
-1. Check logs: `docker-compose logs -f`
-2. Check container status: `docker-compose ps`
-3. Verify configuration: `docker-compose config`
-4. See [TROUBLESHOOTING.md](docs/04-deployment/TROUBLESHOOTING.md)
+- [FrankenPHP Docs](https://frankenphp.dev/)
+- [Redis Documentation](https://redis.io/)
+- [Docker Compose Guide](https://docs.docker.com/compose/)
+- [Nginx Documentation](https://nginx.org/)
 
 ---
 
-**Happy Deploying!** 🐳🚀
+**Last Updated:** 2026-02-09  
+**Version:** 2.1.0 (Docker Optimized) 🐳🚀

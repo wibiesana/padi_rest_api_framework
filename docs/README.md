@@ -82,7 +82,7 @@ curl http://localhost:8085/
 
 | Topic                                                   | Description               |
 | ------------------------------------------------------- | ------------------------- |
-| **[Production](04-deployment/PRODUCTION.md)**           | Deploy to production      |
+| **[Production](04-deployment/PRODUCTION.md)**           | Deploy guide & checklist  |
 | **[Docker](04-deployment/DOCKER.md)**                   | Docker with FrankenPHP    |
 | **[FrankenPHP](04-deployment/FRANKENPHP_SETUP.md)**     | 3-10x performance boost   |
 | **[Troubleshooting](04-deployment/TROUBLESHOOTING.md)** | Common issues & solutions |
@@ -101,7 +101,7 @@ curl http://localhost:8085/
 
 ## ✨ Key Features
 
-- ⚡ **Auto CRUD Generator** - Generate models, controllers, and routes automatically
+- ⚡ **Auto CRUD Generator** - Generate models, controllers, resources, and routes automatically
 - 🔐 **JWT Authentication** - Secure token-based authentication built-in
 - 🗄️ **Multi-Database** - MySQL, MariaDB, PostgreSQL, SQLite support
 - 🚀 **FrankenPHP Ready** - 3-10x performance boost with worker mode

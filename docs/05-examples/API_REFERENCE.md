@@ -6,7 +6,7 @@
 
 ## Standard Response Format
 
-All API responses follow a consistent JSON structure.
+All API responses follow a consistent JSON structure, including a `message_code` for programmatic error handling.
 
 ### Success Response
 
@@ -14,6 +14,7 @@ All API responses follow a consistent JSON structure.
 {
   "success": true,
   "message": "Operation successful",
+  "message_code": "SUCCESS",
   "data": {
     // Response data here
   }
@@ -26,11 +27,33 @@ All API responses follow a consistent JSON structure.
 {
   "success": false,
   "message": "Error message",
+  "message_code": "ERROR_CODE",
   "errors": {
     "field": ["Validation error message"]
   }
 }
 ```
+
+---
+
+## 🔑 Message Codes
+
+| Code                    | HTTP Status | Description                                     |
+| :---------------------- | :---------- | :---------------------------------------------- |
+| `SUCCESS`               | 200         | Request successful                              |
+| `CREATED`               | 201         | Resource created successfully                   |
+| `NO_CONTENT`            | 204         | Request successful, no content to return        |
+| `VALIDATION_FAILED`     | 422         | Request validation failed                       |
+| `BAD_REQUEST`           | 400         | Invalid request format or parameters            |
+| `UNAUTHORIZED`          | 401         | Authentication required                         |
+| `INVALID_CREDENTIALS`   | 401         | Login failed - wrong username/email or password |
+| `NO_TOKEN_PROVIDED`     | 401         | No authentication token provided                |
+| `INVALID_TOKEN`         | 401         | Invalid or expired token                        |
+| `FORBIDDEN`             | 403         | Access denied - insufficient permissions        |
+| `NOT_FOUND`             | 404         | Resource not found                              |
+| `ROUTE_NOT_FOUND`       | 404         | API endpoint not found                          |
+| `RATE_LIMIT_EXCEEDED`   | 429         | Too many requests                               |
+| `INTERNAL_SERVER_ERROR` | 500         | Server-side error                               |
 
 ---
 
@@ -61,6 +84,7 @@ All API responses follow a consistent JSON structure.
 ```json
 {
   "name": "John Doe",
+  "username": "johndoe",
   "email": "john@example.com",
   "password": "SecurePass123!",
   "password_confirmation": "SecurePass123!"
@@ -73,12 +97,14 @@ All API responses follow a consistent JSON structure.
 {
   "success": true,
   "message": "User registered successfully",
+  "message_code": "CREATED",
   "data": {
     "user": {
       "id": 1,
       "name": "John Doe",
+      "username": "johndoe",
       "email": "john@example.com",
-      "created_at": "2026-01-23 09:50:00"
+      "created_at": "2026-02-09 09:50:00"
     },
     "token": "eyJ0eXAiOiJKV1QiLCJhbGc..."
   }
@@ -95,7 +121,7 @@ All API responses follow a consistent JSON structure.
 {
   "username": "john@example.com",
   "password": "SecurePass123!",
-  "remember_me": "true"
+  "remember_me": true
 }
 ```
 
@@ -103,7 +129,7 @@ All API responses follow a consistent JSON structure.
 
 - `username` (required): Email or username
 - `password` (required): User password
-- `remember_me` (optional): Set to `"true"`, `"1"`, `"yes"`, or `"on"` for extended session (365 days). Default session is 1 hour.
+- `remember_me` (optional): Set to `true` or `1` for extended session (365 days). Default session is 1 hour.
 
 **Response (200):**
 
@@ -111,11 +137,13 @@ All API responses follow a consistent JSON structure.
 {
   "success": true,
   "message": "Login successful",
+  "message_code": "SUCCESS",
   "data": {
     "token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
     "user": {
       "id": 1,
       "name": "John Doe",
+      "username": "johndoe",
       "email": "john@example.com"
     }
   }
@@ -137,11 +165,13 @@ Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...
 ```json
 {
   "success": true,
+  "message_code": "SUCCESS",
   "data": {
     "id": 1,
     "name": "John Doe",
+    "username": "johndoe",
     "email": "john@example.com",
-    "created_at": "2026-01-23 09:50:00"
+    "created_at": "2026-02-09 09:50:00"
   }
 }
 ```
@@ -161,28 +191,8 @@ Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...
 ```json
 {
   "success": true,
-  "message": "Logged out successfully"
-}
-```
-
-### Refresh Token
-
-**Endpoint:** `POST /auth/refresh`
-
-**Headers:**
-
-```
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...
-```
-
-**Response (200):**
-
-```json
-{
-  "success": true,
-  "data": {
-    "token": "eyJ0eXAiOiJKV1QiLCJhbGc..."
-  }
+  "message": "Logged out successfully",
+  "message_code": "SUCCESS"
 }
 ```
 
@@ -201,11 +211,13 @@ All auto-generated resources follow this pattern.
 - `page` (integer): Page number (default: 1)
 - `per_page` (integer): Items per page (default: 20)
 - `search` (string): Search keyword
+- `sort` (string): Column to sort by (e.g., `id`, `name`)
+- `order` (string): `asc` or `desc`
 
 **Example:**
 
 ```
-GET /products?page=1&per_page=20&search=laptop
+GET /products?page=1&per_page=20&search=laptop&sort=price&order=desc
 ```
 
 **Response (200):**
@@ -213,18 +225,13 @@ GET /products?page=1&per_page=20&search=laptop
 ```json
 {
   "success": true,
+  "message_code": "SUCCESS",
   "data": [
     {
       "id": 1,
       "name": "Product 1",
       "price": 99.99,
-      "created_at": "2026-01-23 09:50:00"
-    },
-    {
-      "id": 2,
-      "name": "Product 2",
-      "price": 149.99,
-      "created_at": "2026-01-23 10:00:00"
+      "created_at": "2026-02-09 09:50:00"
     }
   ],
   "pagination": {
@@ -240,147 +247,18 @@ GET /products?page=1&per_page=20&search=laptop
 
 **Endpoint:** `GET /resources/{id}`
 
-**Example:**
-
-```
-GET /products/1
-```
-
 **Response (200):**
 
 ```json
 {
   "success": true,
+  "message_code": "SUCCESS",
   "data": {
     "id": 1,
     "name": "Product 1",
     "price": 99.99,
-    "description": "Product description",
-    "created_at": "2026-01-23 09:50:00",
-    "updated_at": "2026-01-23 09:50:00"
+    "created_at": "2026-02-09 09:50:00"
   }
-}
-```
-
-**Response (404):**
-
-```json
-{
-  "success": false,
-  "message": "Resource not found"
-}
-```
-
-### Create Resource
-
-**Endpoint:** `POST /resources`
-
-**Headers:**
-
-```
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...
-Content-Type: application/json
-```
-
-**Request:**
-
-```json
-{
-  "name": "New Product",
-  "price": 99.99,
-  "description": "Product description"
-}
-```
-
-**Response (201):**
-
-```json
-{
-  "success": true,
-  "message": "Resource created successfully",
-  "data": {
-    "id": 3,
-    "name": "New Product",
-    "price": 99.99,
-    "description": "Product description",
-    "created_at": "2026-01-23 11:00:00"
-  }
-}
-```
-
-**Response (422):**
-
-```json
-{
-  "success": false,
-  "message": "Validation failed",
-  "errors": {
-    "name": ["The name field is required"],
-    "price": ["The price must be a number"]
-  }
-}
-```
-
-### Update Resource
-
-**Endpoint:** `PUT /resources/{id}`
-
-**Headers:**
-
-```
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...
-Content-Type: application/json
-```
-
-**Request:**
-
-```json
-{
-  "name": "Updated Product",
-  "price": 89.99
-}
-```
-
-**Response (200):**
-
-```json
-{
-  "success": true,
-  "message": "Resource updated successfully",
-  "data": {
-    "id": 1,
-    "name": "Updated Product",
-    "price": 89.99,
-    "updated_at": "2026-01-23 11:30:00"
-  }
-}
-```
-
-### Delete Resource
-
-**Endpoint:** `DELETE /resources/{id}`
-
-**Headers:**
-
-```
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...
-```
-
-**Response (200):**
-
-```json
-{
-  "success": true,
-  "message": "Resource deleted successfully"
-}
-```
-
-**Response (404):**
-
-```json
-{
-  "success": false,
-  "message": "Resource not found"
 }
 ```
 
@@ -388,36 +266,16 @@ Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...
 
 ## Validation Rules
 
-### Available Rules
-
-| Rule                  | Example              | Description                               |
-| --------------------- | -------------------- | ----------------------------------------- |
-| `required`            | `required`           | Field must be present and not empty       |
-| `string`              | `string`             | Must be a string                          |
-| `numeric`             | `numeric`            | Must be a number                          |
-| `integer`             | `integer`            | Must be an integer                        |
-| `email`               | `email`              | Must be valid email format                |
-| `min:n`               | `min:8`              | Minimum length (string) or value (number) |
-| `max:n`               | `max:255`            | Maximum length (string) or value (number) |
-| `in:a,b,c`            | `in:active,inactive` | Must be one of the specified values       |
-| `exists:table,column` | `exists:users,id`    | Must exist in database table              |
-| `unique:table,column` | `unique:users,email` | Must be unique in database table          |
-
-### Example Validation
-
-```php
-protected function getValidationRules(): array
-{
-    return [
-        'name' => 'required|string|max:255',
-        'email' => 'required|email|unique:users,email',
-        'password' => 'required|min:8',
-        'age' => 'required|numeric|min:18|max:120',
-        'status' => 'required|in:active,inactive',
-        'category_id' => 'required|exists:categories,id'
-    ];
-}
-```
+| Rule                  | Description                         |
+| :-------------------- | :---------------------------------- |
+| `required`            | Field must be present and not empty |
+| `string`              | Must be a valid string              |
+| `numeric`             | Must be a numeric value             |
+| `email`               | Must be a valid email format        |
+| `min:n`               | Minimum length/value                |
+| `max:n`               | Maximum length/value                |
+| `unique:table,column` | Must be unique in the database      |
+| `exists:table,column` | Must exist in the database          |
 
 ---
 
@@ -425,118 +283,19 @@ protected function getValidationRules(): array
 
 ### Headers
 
-Every response includes rate limit headers:
-
 ```
 X-RateLimit-Limit: 60
-X-RateLimit-Remaining: 45
-X-RateLimit-Reset: 1706000000
+X-RateLimit-Remaining: 59
+X-RateLimit-Reset: 1707480000
 ```
 
-### Rate Limit Exceeded
-
-**Response (429):**
+### Exceeded Response (429)
 
 ```json
 {
   "success": false,
-  "message": "Too many requests. Please try again later."
-}
-```
-
----
-
-## Error Responses
-
-### Validation Error (422)
-
-```json
-{
-  "success": false,
-  "message": "Validation failed",
-  "errors": {
-    "email": ["The email field is required"],
-    "password": ["The password must be at least 8 characters"]
-  }
-}
-```
-
-### Unauthorized (401)
-
-```json
-{
-  "success": false,
-  "message": "Unauthorized. Please login."
-}
-```
-
-### Not Found (404)
-
-```json
-{
-  "success": false,
-  "message": "Resource not found"
-}
-```
-
-### Server Error (500)
-
-```json
-{
-  "success": false,
-  "message": "Internal server error"
-}
-```
-
----
-
-## Pagination
-
-### Request
-
-```
-GET /products?page=2&per_page=20
-```
-
-### Response
-
-```json
-{
-  "success": true,
-  "data": [...],
-  "pagination": {
-    "total": 100,
-    "page": 2,
-    "per_page": 20,
-    "total_pages": 5
-  }
-}
-```
-
----
-
-## Search
-
-### Request
-
-```
-GET /products?search=laptop
-```
-
-Searches all text fields in the resource.
-
-### Response
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "name": "Gaming Laptop",
-      "description": "High-performance laptop"
-    }
-  ]
+  "message": "Too many requests. Please try again later.",
+  "message_code": "RATE_LIMIT_EXCEEDED"
 }
 ```
 
@@ -551,68 +310,16 @@ curl -X POST http://localhost:8085/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "John Doe",
+    "username": "johndoe",
     "email": "john@example.com",
     "password": "SecurePass123!",
     "password_confirmation": "SecurePass123!"
   }'
 ```
 
-### Login
-
-```bash
-curl -X POST http://localhost:8085/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "john@example.com",
-    "password": "SecurePass123!"
-  }'
-```
-
-### List Resources
-
-```bash
-curl -X GET http://localhost:8085/products \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-### Create Resource
-
-```bash
-curl -X POST http://localhost:8085/products \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "New Product",
-    "price": 99.99
-  }'
-```
-
-### Update Resource
-
-```bash
-curl -X PUT http://localhost:8085/products/1 \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "price": 89.99
-  }'
-```
-
-### Delete Resource
-
-```bash
-curl -X DELETE http://localhost:8085/products/1 \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
 ---
 
-## Next Steps
+**Next Steps:**
 
-1. **API Testing** - [../03-advanced/API_TESTING.md](../03-advanced/API_TESTING.md)
-2. **Postman Guide** - [../03-advanced/POSTMAN_GUIDE.md](../03-advanced/POSTMAN_GUIDE.md)
-3. **Frontend Integration** - [../03-advanced/FRONTEND_INTEGRATION.md](../03-advanced/FRONTEND_INTEGRATION.md)
-
----
-
-**Previous:** [← Troubleshooting](../04-deployment/TROUBLESHOOTING.md) | **Home:** [Documentation Index →](../INDEX.md)
+- [Frontend Integration](../03-advanced/FRONTEND_INTEGRATION.md)
+- [Postman Guide](../03-advanced/POSTMAN_GUIDE.md)

@@ -331,15 +331,14 @@ Production-ready deployment and performance optimization.
 
 ### Production Deployment
 
-**[📄 PRODUCTION.md](04-deployment/PRODUCTION.md)** ✨ NEW
+**[📄 PRODUCTION.md](04-deployment/PRODUCTION.md)** ✨ UPDATED
 
-- Pre-deployment checklist
-- Server configuration (Apache/NGINX)
-- SSL/TLS setup
-- File permissions
-- Database setup
-- Monitoring
-- Backup strategy
+- Pre-deployment checklist (Detailed)
+- Server configuration (Apache/NGINX/FrankenPHP)
+- SSL/TLS security hardening
+- Database setup & automated backups
+- Monitoring, logging & health checks
+- Deployment workflow & maintenance
 
 ### Troubleshooting Guide
 
@@ -354,30 +353,14 @@ Production-ready deployment and performance optimization.
 
 ### Docker Deployment
 
-**[📄 DOCKER.md](04-deployment/DOCKER.md)** ✨ NEW
+**[📄 DOCKER.md](04-deployment/DOCKER.md)** ✨ UPDATED
 
-- Docker setup with FrankenPHP
-- Development environment
-- Production deployment
-- Docker Compose configuration
-- NGINX reverse proxy
-- Backup & restore
-- Scaling strategies
-
-**[📄 DOCKER_DEPLOY.md](04-deployment/DOCKER_DEPLOY.md)** ✨ Complete Guide
-
+- Comprehensive Docker setup guide
 - 3 deployment modes (Standard/Worker/Nginx)
-- Redis cache configuration
-- Step-by-step setup
-- Production checklist
-- Troubleshooting
-
-**[📄 DOCKER_MODE_SELECTION.md](04-deployment/DOCKER_MODE_SELECTION.md)** ✨ Mode Selection Guide
-
-- Choose deployment mode
-- Performance comparison
-- Quick start commands
-- Best practices
+- Redis cache & persistent storage
+- SSL/TLS & Caddyfile configuration
+- Commands for backup, restore, and scaling
+- Troubleshooting & FAQ
 
 **[📄 REDIS_SETUP.md](04-deployment/REDIS_SETUP.md)** ✨ Redis Configuration
 
@@ -395,13 +378,13 @@ Production-ready deployment and performance optimization.
 - Usage examples
 - Migration from old naming
 
-**[📄 FRANKENPHP_SETUP.md](04-deployment/FRANKENPHP_SETUP.md)**
+**[📄 FRANKENPHP_SETUP.md](04-deployment/FRANKENPHP_SETUP.md)** ✨ UPDATED
 
-- Installation guide
+- Installation & setup guide
 - Performance benchmarks
-- Configuration examples
-- Docker deployment
-- Troubleshooting
+- Technical implementation details
+- Docker & Caddyfile configuration
+- Troubleshooting & FAQ
 
 **[📄 MODE_SWITCHING.md](04-deployment/MODE_SWITCHING.md)** ✨ NEW
 
@@ -416,15 +399,6 @@ Production-ready deployment and performance optimization.
 - Worker vs Standard mode
 - Cold start comparison
 - Best practices
-
-### FrankenPHP Implementation Details
-
-**[📄 FRANKENPHP_IMPLEMENTATION.md](04-deployment/FRANKENPHP_IMPLEMENTATION.md)**
-
-- Technical implementation
-- Code changes explained
-- Migration guide
-- Performance metrics
 
 ---
 
@@ -587,9 +561,8 @@ docs/
 ├── 04-deployment/                    # Production & Performance
 │   ├── PRODUCTION.md                 # ✨ Production deployment
 │   ├── DOCKER.md                     # ✨ Docker deployment
-│   ├── TROUBLESHOOTING.md            # ✨ Troubleshooting guide
-│   ├── FRANKENPHP_SETUP.md           # FrankenPHP setup
-│   └── FRANKENPHP_IMPLEMENTATION.md  # FrankenPHP implementation
+│   ├── FRANKENPHP_SETUP.md           # ✨ FrankenPHP setup & implementation
+│   └── TROUBLESHOOTING.md            # ✨ Troubleshooting guide
 │
 └── 05-examples/                      # Code Samples
     ├── API_REFERENCE.md              # ✨ Complete API reference

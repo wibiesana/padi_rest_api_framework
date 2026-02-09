@@ -1,36 +1,38 @@
 # Redis Cache Configuration - Summary
 
-## ✅ Apa yang Sudah Dikonfigurasi
+## ✅ What Has Been Configured
 
-### 1. **Docker Compose** (`docker-compose.yml`)
+### 1. **Docker Compose**
 
 - ✅ Service `padi_app` - FrankenPHP standard mode
 - ✅ Service `padi_worker` - FrankenPHP worker mode (high performance)
-- ✅ Service `padi_nginx` - Nginx reverse proxy dengan SSL support
-- ✅ Service `redis` - Redis 7 Alpine untuk cache
-- ✅ Environment variables untuk Redis (`CACHE_DRIVER=redis`, `REDIS_HOST=redis`)
-- ✅ Redis volume untuk persistensi data
+- ✅ Service `padi_nginx` - Nginx reverse proxy with SSL support
+- ✅ Service `redis` - Redis 7 Alpine for cache
+- ✅ Environment variables for Redis (`CACHE_DRIVER=redis`, `REDIS_HOST=redis`)
+- ✅ Redis volume for data persistence
 
 ### 2. **Core Cache Class** (`core/Cache.php`)
 
-- ✅ Dual driver support: `file` dan `redis`
-- ✅ Auto-detect driver dari environment variable `CACHE_DRIVER`
-- ✅ Fallback ke file cache jika Redis gagal
-- ✅ Support Predis client untuk koneksi Redis
+- ✅ Dual driver support: `file` and `redis`
+- ✅ Auto-detect driver from environment variable `CACHE_DRIVER`
+- ✅ Fallback to file cache if Redis fails
+- ✅ Support for Predis client for Redis connection
 - ✅ Methods: `get()`, `set()`, `has()`, `delete()`, `clear()`, `remember()`
 
 ### 3. **Environment Configuration**
 
-- ✅ `.env.example` - Updated dengan penjelasan Redis
-- ✅ `.env.docker` - Template untuk Docker deployment dengan Redis
+- ✅ `.env.example` - Updated with Redis explanations
+- ✅ `.env.docker` - Template for Docker deployment with Redis
 
 ### 4. **Documentation**
 
-- ✅ `DOCKER_DEPLOY.md` - Panduan lengkap deployment Docker dengan Redis
-- ✅ `README.md` - Updated dengan info Redis dan Docker
-- ✅ `scripts/test_redis.php` - Script untuk test cache configuration
+- ✅ `DOCKER.md` - Comprehensive Docker deployment guide with Redis
+- ✅ `README.md` - Updated with Redis and Docker info
+- ✅ `scripts/test_redis.php` - Script to test cache configuration
 
-## 🚀 Cara Menggunakan
+---
+
+## 🚀 How to Use
 
 ### Development (File Cache)
 
@@ -43,13 +45,13 @@ php -S localhost:8085 -t public
 
 ### Production (Redis Cache) - Docker
 
-**Pilih salah satu mode deployment:**
+**Choose one of the deployment modes:**
 
 #### Mode 1: Standard (Dev/Low Traffic)
 
 ```bash
 cp .env.docker .env
-# Edit CACHE_DRIVER=redis (sudah default)
+# Edit CACHE_DRIVER=redis (already default)
 
 docker compose -f docker-compose.standard.yml up -d
 docker compose -f docker-compose.standard.yml exec padi_app php scripts/test_redis.php
@@ -59,7 +61,7 @@ docker compose -f docker-compose.standard.yml exec padi_app php scripts/test_red
 
 ```bash
 cp .env.docker .env
-# Edit CACHE_DRIVER=redis (sudah default)
+# Edit CACHE_DRIVER=redis (already default)
 
 docker compose -f docker-compose.worker.yml up -d
 docker compose -f docker-compose.worker.yml exec padi_worker php scripts/test_redis.php
@@ -69,7 +71,7 @@ docker compose -f docker-compose.worker.yml exec padi_worker php scripts/test_re
 
 ```bash
 cp .env.docker .env
-# Edit CACHE_DRIVER=redis (sudah default)
+# Edit CACHE_DRIVER=redis (already default)
 
 docker compose -f docker-compose.nginx.yml up -d
 docker compose -f docker-compose.nginx.yml exec padi_app php scripts/test_redis.php
@@ -92,7 +94,9 @@ REDIS_PORT=6379
 php scripts/test_redis.php
 ```
 
-## 📊 Perbandingan Driver
+---
+
+## 📊 Driver Comparison
 
 | Feature     | File Cache | Redis Cache    |
 | ----------- | ---------- | -------------- |
@@ -103,9 +107,11 @@ php scripts/test_redis.php
 | Setup       | None       | Redis server   |
 | Production  | Dev only   | ✅ Recommended |
 
-## 🎯 Mode Deployment
+---
 
-Tersedia 3 mode deployment, Redis **selalu included** di semua mode:
+## 🎯 Deployment Modes
+
+3 deployment modes are available, Redis is **always included** in all modes:
 
 ### Mode 1: Standard + Redis
 
@@ -136,6 +142,8 @@ docker compose -f docker-compose.nginx.yml up -d
 # Redis: ✅ Always included
 ```
 
+---
+
 ## 📝 Environment Variables
 
 ```env
@@ -146,6 +154,8 @@ REDIS_PORT=6379
 REDIS_PASSWORD=                   # optional
 REDIS_DATABASE=0                  # 0-15
 ```
+
+---
 
 ## 🧪 Testing
 
@@ -166,10 +176,12 @@ docker compose exec redis redis-cli KEYS "*"
 docker compose exec redis redis-cli INFO stats
 ```
 
+---
+
 ## 🛠️ Commands Cheat Sheet
 
 ```bash
-# Docker Management (ganti sesuai mode: standard/worker/nginx)
+# Docker Management (replace based on mode: standard/worker/nginx)
 docker compose -f docker-compose.worker.yml up -d       # Start
 docker compose -f docker-compose.worker.yml down        # Stop
 docker compose -f docker-compose.worker.yml logs -f     # View logs
@@ -180,28 +192,32 @@ docker compose -f docker-compose.worker.yml ps          # Status
 docker compose -f docker-compose.worker.yml exec redis redis-cli ping            # Test
 docker compose -f docker-compose.worker.yml exec redis redis-cli FLUSHDB        # Clear cache
 docker compose -f docker-compose.worker.yml exec redis redis-cli DBSIZE         # Count keys
-docker compose -f docker-compose.worker.yml exec redis redis-cli INFO memory    # Memory
+docker compose -f docker-compose.worker.yml exec redis redis-cli INFO memory    # Memory usage
 
 # App Management
 docker compose -f docker-compose.worker.yml exec padi_worker php scripts/test_redis.php
 docker compose -f docker-compose.worker.yml exec padi_worker php scripts/migrate.php migrate
 ```
 
+---
+
 ## 📚 Documentation Links
 
-- [DOCKER_DEPLOY.md](DOCKER_DEPLOY.md) - Complete Docker deployment guide
+- [DOCKER.md](DOCKER.md) - Complete Docker deployment guide
 - [README.md](../../README.md) - Main documentation
 - [.env.example](../../.env.example) - Environment configuration examples
 
-## ⚡ Quick Start
+---
+
+## 🚀 Quick Start
 
 ```bash
 # 1. Setup
 cp .env.docker .env
-# Edit .env sesuai kebutuhan (Redis sudah default!)
+# Edit .env as needed (Redis is already default!)
 
-# 2. Pilih mode dan start
-# RECOMMENDED: Worker mode untuk production
+# 2. Choose mode and start
+# RECOMMENDED: Worker mode for production
 docker compose -f docker-compose.worker.yml up -d
 
 # 3. Test
@@ -211,11 +227,13 @@ docker compose -f docker-compose.worker.yml exec padi_worker php scripts/test_re
 curl http://localhost:8085/
 ```
 
+---
+
 ## 🎉 Done!
 
-Redis cache sudah dikonfigurasi dan **selalu terinstall** di semua mode deployment! 🚀
+Redis cache is configured and **always installed** in all deployment modes! 🚀
 
-**Pilihan deployment:**
+**Deployment options:**
 
 - `docker-compose.standard.yml` - Standard + Redis
 - `docker-compose.worker.yml` - Worker + Redis ⚡ **RECOMMENDED**

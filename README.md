@@ -131,22 +131,21 @@ curl -X POST http://localhost:8085/auth/login \
 
 ## 📖 DOCUMENTATION
 
-| File                                                                                           | Description                                                   |
-| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| **[docs/README.md](docs/README.md)**                                                           | Complete documentation (core features, deployment, API)       |
-| **[docs/04-deployment/DOCKER_MODE_SELECTION.md](docs/04-deployment/DOCKER_MODE_SELECTION.md)** | 🐳 Choose your Docker deployment mode (Standard/Worker/Nginx) |
-| **[docs/04-deployment/DOCKER_DEPLOY.md](docs/04-deployment/DOCKER_DEPLOY.md)**                 | Complete Docker deployment guide with Redis                   |
-| **[docs/FRONTEND_INTEGRATION.md](docs/FRONTEND_INTEGRATION.md)**                               | Frontend integration guide (Vue, React, Angular, Next.js etc) |
-| **[docs/frontend-examples.js](docs/frontend-examples.js)**                                     | Ready-to-use API client examples                              |
-| **[docs/QUICK_START.md](docs/QUICK_START.md)**                                                 | Quick start guide for init_app.bat                            |
-| **[docs/INIT_APP_GUIDE.md](docs/INIT_APP_GUIDE.md)**                                           | Complete setup guide with troubleshooting                     |
-| **[docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md)**                                           | Database setup and multi-database guide                       |
-| **[docs/MULTI_DATABASE.md](docs/MULTI_DATABASE.md)**                                           | Multi-database usage examples                                 |
-| **[docs/USER_MODEL.md](docs/USER_MODEL.md)**                                                   | Enhanced User model documentation                             |
-| **[docs/02-core-concepts/RBAC.md](docs/02-core-concepts/RBAC.md)**                             | Role-based access control (authorization)                     |
-| **[docs/03-advanced/ERROR_HANDLING.md](docs/03-advanced/ERROR_HANDLING.md)**                   | Error Handling & Database Debugging guide                     |
-| **[docs/API_TESTING.md](docs/API_TESTING.md)**                                                 | API testing examples                                          |
-| **[.env.example](.env.example)**                                                               | Environment configuration example                             |
+| File                                                                         | Description                                                   |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| **[docs/README.md](docs/README.md)**                                         | Complete documentation (core features, deployment, API)       |
+| **[Docker](docs/04-deployment/DOCKER.md)**                                   | 🐳 Comprehensive Docker guide (Standard/Worker/Nginx)         |
+| **[docs/FRONTEND_INTEGRATION.md](docs/FRONTEND_INTEGRATION.md)**             | Frontend integration guide (Vue, React, Angular, Next.js etc) |
+| **[docs/frontend-examples.js](docs/frontend-examples.js)**                   | Ready-to-use API client examples                              |
+| **[docs/QUICK_START.md](docs/QUICK_START.md)**                               | Quick start guide for init_app.bat                            |
+| **[docs/INIT_APP_GUIDE.md](docs/INIT_APP_GUIDE.md)**                         | Complete setup guide with troubleshooting                     |
+| **[docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md)**                         | Database setup and multi-database guide                       |
+| **[docs/MULTI_DATABASE.md](docs/MULTI_DATABASE.md)**                         | Multi-database usage examples                                 |
+| **[docs/USER_MODEL.md](docs/USER_MODEL.md)**                                 | Enhanced User model documentation                             |
+| **[docs/02-core-concepts/RBAC.md](docs/02-core-concepts/RBAC.md)**           | Role-based access control (authorization)                     |
+| **[docs/03-advanced/ERROR_HANDLING.md](docs/03-advanced/ERROR_HANDLING.md)** | Error Handling & Database Debugging guide                     |
+| **[docs/API_TESTING.md](docs/API_TESTING.md)**                               | API testing examples                                          |
+| **[.env.example](.env.example)**                                             | Environment configuration example                             |
 
 ---
 
@@ -257,7 +256,7 @@ php scripts/migrate.php migrate
 
 **Deployment Options:**
 
-- **Docker (Recommended):** See [docs/04-deployment/DOCKER_DEPLOY.md](docs/04-deployment/DOCKER_DEPLOY.md) - Complete guide with Redis, FrankenPHP Worker mode, and Nginx
+- **Docker (Recommended):** See [docs/04-deployment/DOCKER.md](docs/04-deployment/DOCKER.md) - Comprehensive guide with Redis, FrankenPHP Worker mode, and Nginx
 - **Manual Deployment:** See [docs/README.md](docs/README.md) (Part 5: Deployment)
 - **Performance:** Use FrankenPHP Worker mode for 10-100x performance boost
 
