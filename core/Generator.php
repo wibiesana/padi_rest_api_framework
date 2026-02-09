@@ -752,7 +752,7 @@ use Core\ActiveRecord;
 class {$modelName} extends ActiveRecord
 {
     protected string \$table = '{$tableName}';
-    protected string \$primaryKey = 'id';
+    protected string|array \$primaryKey = 'id';
     
     protected array \$fillable = [
         {$fillableStr}
