@@ -14,23 +14,13 @@ class AuthMiddleware
         $token = $request->bearerToken();
 
         if (!$token) {
-            $response = new Response();
-            $response->json([
-                'success' => false,
-                'message' => 'Unauthorized - No token provided',
-                'message_code' => 'NO_TOKEN_PROVIDED'
-            ], 401);
+            throw new \Exception('Unauthorized - No token provided', 401);
         }
 
         $decoded = \Core\Auth::verifyToken($token);
 
         if (!$decoded) {
-            $response = new Response();
-            $response->json([
-                'success' => false,
-                'message' => 'Unauthorized - Invalid or expired token',
-                'message_code' => 'INVALID_TOKEN'
-            ], 401);
+            throw new \Exception('Unauthorized - Invalid or expired token', 401);
         }
 
         // Attach user info to request for later use

@@ -77,9 +77,17 @@ class Queue
                     $db->prepare("DELETE FROM jobs WHERE id = ?")->execute([$job['id']]);
                     echo "DONE\n";
                 } else {
-                    // Release job or fail it
-                    $db->prepare("UPDATE jobs SET reserved_at = NULL, attempts = attempts + 1 WHERE id = ?")->execute([$job['id']]);
-                    echo "FAILED\n";
+                    // Release job or fail it (with retry limit)
+                    $maxAttempts = (int)Env::get('QUEUE_MAX_ATTEMPTS', 3);
+
+                    if ($job['attempts'] >= $maxAttempts) {
+                        $db->prepare("DELETE FROM jobs WHERE id = ?")->execute([$job['id']]);
+                        echo "REMOVED (Max attempts reached)\n";
+                        Logger::error("Job deleted after reaching max attempts", ['id' => $job['id'], 'payload' => $job['payload']]);
+                    } else {
+                        $db->prepare("UPDATE jobs SET reserved_at = NULL, attempts = attempts + 1 WHERE id = ?")->execute([$job['id']]);
+                        echo "FAILED (Will retry)\n";
+                    }
                 }
             } else {
                 $db->rollBack();

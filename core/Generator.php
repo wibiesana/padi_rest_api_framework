@@ -1152,6 +1152,22 @@ PHP;
                     ],
                     'response' => []
                 ],
+                [
+                    'name' => "Search {$modelName}s",
+                    'request' => [
+                        'method' => 'GET',
+                        'header' => [],
+                        'url' => [
+                            'raw' => "{{base_url}}{$apiPrefix}/{$prefix}?search=sample",
+                            'host' => ['{{base_url}}'],
+                            'path' => [ltrim($apiPrefix, '/'), $prefix],
+                            'query' => [
+                                ['key' => 'search', 'value' => 'sample']
+                            ]
+                        ]
+                    ],
+                    'response' => []
+                ],
 
                 [
                     'name' => "Get All {$modelName}s (No Pagination)",

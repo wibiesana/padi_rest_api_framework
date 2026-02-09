@@ -55,9 +55,15 @@ curl http://localhost:8085/
 | **[Authentication](02-core-concepts/AUTHENTICATION.md)** | JWT authentication & security     |
 | **[Models](02-core-concepts/MODELS.md)**                 | Database models & CRUD operations |
 | **[Controllers](02-core-concepts/CONTROLLERS.md)**       | Request handling & responses      |
+| **[Routing](02-core-concepts/ROUTING.md)**               | Route mapping & groups            |
+| **[Middleware](02-core-concepts/MIDDLEWARE.md)**         | Authentication & filtering        |
 | **[Code Generator](02-core-concepts/CODE_GENERATOR.md)** | Auto-generate CRUD code           |
 | **[Query Builder](02-core-concepts/QUERY_BUILDER.md)**   | Advanced database queries         |
 | **[API Resources](02-core-concepts/RESOURCES.md)**       | Transformation layer & formatting |
+| **[Email](02-core-concepts/EMAIL.md)**                   | SMTP & Queued emails              |
+| **[Queue System](02-core-concepts/QUEUE.md)**            | Background jobs & workers         |
+| **[Cache](02-core-concepts/CACHE.md)**                   | File & Redis caching              |
+| **[File Upload](02-core-concepts/FILE_UPLOAD.md)**       | Safe uploads & validation         |
 | **[RBAC](02-core-concepts/RBAC.md)**                     | Role-based authorization guide    |
 
 ### 🎯 Advanced Topics
@@ -66,6 +72,7 @@ curl http://localhost:8085/
 | --------------------------------------------------------------- | ------------------------------- |
 | **[Multi-Database](03-advanced/MULTI_DATABASE.md)**             | Multiple database support       |
 | **[Frontend Integration](03-advanced/FRONTEND_INTEGRATION.md)** | Vue, React, Angular integration |
+| **[Cross-Origin (CORS)](03-advanced/CORS.md)**                  | Whitelisting & security         |
 | **[API Testing](03-advanced/API_TESTING.md)**                   | Testing your API                |
 | **[Security](03-advanced/SECURITY.md)**                         | Security best practices         |
 
@@ -119,11 +126,14 @@ curl http://localhost:8085/
 2. [Configuration](01-getting-started/CONFIGURATION.md) - 10 min
 3. [Code Generator](02-core-concepts/CODE_GENERATOR.md) - 15 min
 4. [Controllers](02-core-concepts/CONTROLLERS.md) - 20 min
-5. [API Resources](02-core-concepts/RESOURCES.md) - 15 min
-6. [RBAC](02-core-concepts/RBAC.md) - 20 min
-7. [Frontend Integration](03-advanced/FRONTEND_INTEGRATION.md) - 30 min
+5. [Routing](02-core-concepts/ROUTING.md) - 10 min
+6. [Middleware](02-core-concepts/MIDDLEWARE.md) - 15 min
+7. [API Resources](02-core-concepts/RESOURCES.md) - 15 min
+8. [Cache](02-core-concepts/CACHE.md) - 10 min
+9. [RBAC](02-core-concepts/RBAC.md) - 20 min
+10. [Frontend Integration](03-advanced/FRONTEND_INTEGRATION.md) - 30 min
 
-**Total time:** ~1.5 hours
+**Total time:** ~2.5 hours
 
 ### Path 3: Advanced (Performance & scaling)
 

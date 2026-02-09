@@ -114,7 +114,7 @@ php scripts/generate.php crud products --write
 Each generated collection contains:
 
 - ✅ **GET** - Get All (Paginated) with page/per_page params
-- ✅ **GET** - Search with keyword param
+- ✅ **GET** - Search with `search` param
 - ✅ **GET** - Get All (No Pagination)
 - ✅ **GET** - Get Single by ID
 - ✅ **POST** - Create (with sample data)

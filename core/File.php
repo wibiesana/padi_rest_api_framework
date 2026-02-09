@@ -6,7 +6,7 @@ use Exception;
 
 class File
 {
-    private static string $uploadDir = 'storage/uploads';
+    private static string $uploadDir = 'uploads';
 
     /**
      * Upload a file

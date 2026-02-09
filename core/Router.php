@@ -192,10 +192,17 @@ class Router
     private function executeMiddleware($middleware, Request $request): void
     {
         if (is_string($middleware)) {
-            $middlewareClass = "App\\Middleware\\{$middleware}";
+            // Support parameters like 'RoleMiddleware:admin,manager'
+            $parts = explode(':', $middleware, 2);
+            $name = $parts[0];
+            $params = isset($parts[1]) ? $parts[1] : '';
+
+            $middlewareClass = "App\\Middleware\\{$name}";
             if (class_exists($middlewareClass)) {
                 $instance = new $middlewareClass();
-                $instance->handle($request);
+                $instance->handle($request, $params);
+            } else {
+                throw new \Exception("Middleware {$middlewareClass} not found");
             }
         } elseif (is_callable($middleware)) {
             $middleware($request);

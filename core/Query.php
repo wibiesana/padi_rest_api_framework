@@ -316,7 +316,19 @@ class Query
         }
 
         if (!empty($this->orderBy)) {
-            $sql .= ' ORDER BY ' . implode(', ', $this->orderBy);
+            $orders = [];
+            foreach ($this->orderBy as $column => $direction) {
+                if (is_int($column)) {
+                    $orders[] = $direction;
+                } else {
+                    // Normalize direction (handle SORT_ASC/SORT_DESC constants)
+                    if (is_int($direction)) {
+                        $direction = $direction === 3 ? 'DESC' : 'ASC'; // 3 = SORT_DESC, 4 = SORT_ASC
+                    }
+                    $orders[] = "$column $direction";
+                }
+            }
+            $sql .= ' ORDER BY ' . implode(', ', $orders);
         }
 
         if ($this->limit !== null) {

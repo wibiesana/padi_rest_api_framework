@@ -120,13 +120,33 @@ Essential knowledge for building with Padi REST API.
 
 ### Controllers Guide
 
-**[📄 CONTROLLERS.md](02-core-concepts/CONTROLLERS.md)** ✨ NEW
+**[📄 CONTROLLERS.md](02-core-concepts/CONTROLLERS.md)** ✨ UPDATED
 
 - Controller structure
 - Request handling
 - Custom endpoints
 - Response methods
 - Error handling
+
+### Routing Guide
+
+**[📄 ROUTING.md](02-core-concepts/ROUTING.md)** ✨ NEW
+
+- Route mapping
+- Route parameters
+- API Versioning
+- Route groups
+- Best practices
+
+### Middleware Guide
+
+**[📄 MIDDLEWARE.md](02-core-concepts/MIDDLEWARE.md)** ✨ NEW
+
+- Understanding middleware
+- Defining middleware
+- Registering middleware
+- Built-in middleware
+- FrankenPHP compatibility
 
 ### Response Structure Guide
 
@@ -148,6 +168,42 @@ Essential knowledge for building with Padi REST API.
 - Formatting API responses
 - Conditional relationships
 - Collection handling
+
+### Email Guide
+
+**[📄 EMAIL.md](02-core-concepts/EMAIL.md)** ✨ NEW
+
+- SMTP configuration
+- Sending HTML emails
+- Sending attachments
+- Queued emails
+
+### Queue System Guide
+
+**[📄 QUEUE.md](02-core-concepts/QUEUE.md)** ✨ NEW
+
+- Background job processing
+- Defining job classes
+- Pushing to queue
+- Running queue worker
+
+### Caching System Guide
+
+**[📄 CACHE.md](02-core-concepts/CACHE.md)** ✨ NEW
+
+- File & Redis drivers
+- Basic operations (Get/Set)
+- The "Remember" pattern
+- Cache clearing
+
+### File Upload Guide
+
+**[📄 FILE_UPLOAD.md](02-core-concepts/FILE_UPLOAD.md)** ✨ NEW
+
+- Safe file uploads
+- Size & type validation
+- Directory organization
+- URL generation & deletion
 
 ### Database Setup
 
@@ -238,6 +294,15 @@ Take your API to the next level with advanced features.
 - React integration
 - Angular integration
 - Next.js integration
+
+### Cross-Origin Resource Sharing (CORS)
+
+**[📄 CORS.md](03-advanced/CORS.md)** ✨ NEW
+
+- Understanding CORS
+- Whitelisting origins
+- Preflight handling
+- FrankenPHP compatibility
 - Vanilla JavaScript
 
 ### API Testing
@@ -431,11 +496,15 @@ Concise overview with links to:
 2. [CONFIGURATION.md](01-getting-started/CONFIGURATION.md) - 10 min
 3. [CODE_GENERATOR.md](02-core-concepts/CODE_GENERATOR.md) - 15 min
 4. [CONTROLLERS.md](02-core-concepts/CONTROLLERS.md) - 20 min
-5. [RESOURCES.md](02-core-concepts/RESOURCES.md) - 15 min
-6. [RBAC.md](02-core-concepts/RBAC.md) - 20 min
-7. [FRONTEND_INTEGRATION.md](03-advanced/FRONTEND_INTEGRATION.md) - 30 min
+5. [ROUTING.md](02-core-concepts/ROUTING.md) - 10 min
+6. [MIDDLEWARE.md](02-core-concepts/MIDDLEWARE.md) - 15 min
+7. [RESOURCES.md](02-core-concepts/RESOURCES.md) - 15 min
+8. [CACHE.md](02-core-concepts/CACHE.md) - 10 min
+9. [FILE_UPLOAD.md](02-core-concepts/FILE_UPLOAD.md) - 10 min
+10. [RBAC.md](02-core-concepts/RBAC.md) - 20 min
+11. [FRONTEND_INTEGRATION.md](03-advanced/FRONTEND_INTEGRATION.md) - 30 min
 
-**Total: ~1.5 hours**
+**Total: ~2.7 hours**
 
 ### Path 3: Advanced (Performance & scaling)
 
@@ -492,18 +561,25 @@ docs/
 │   ├── AUTHENTICATION.md             # ✨ JWT authentication & security
 │   ├── MODELS.md                     # ✨ Database models guide
 │   ├── CONTROLLERS.md                # ✨ Controllers guide
+│   ├── ROUTING.md                    # ✨ Routing guide
 │   ├── CODE_GENERATOR.md             # ✨ Auto CRUD generator
 │   ├── RESOURCES.md                  # ✨ API resources guide
+│   ├── EMAIL.md                      # ✨ Email guide
+│   ├── QUEUE.md                      # ✨ Queue system guide
+│   ├── CACHE.md                      # ✨ Caching system guide
+│   ├── FILE_UPLOAD.md                # ✨ File upload guide
 │   ├── DATABASE_SETUP.md             # Database configuration
 │   ├── QUERY_BUILDER.md              # Query builder
 │   ├── DATABASE_TRANSACTIONS.md      # Transactions
-│   ├── ACTIVE_RECORD_LIFECYCLE.md    # Model lifecycle
+│   ├── ACTIVE_RECORD.md              # ✨ ActiveRecord guide
 │   └── USER_MODEL.md                 # User model guide
 │
 ├── 03-advanced/                      # Advanced Topics
 │   ├── SECURITY.md                   # ✨ Security best practices
 │   ├── MULTI_DATABASE.md             # Multi-database support
 │   ├── FRONTEND_INTEGRATION.md       # Frontend integration
+│   ├── CORS.md                       # ✨ CORS guide
+│   ├── ERROR_HANDLING.md             # ✨ Error message codes
 │   ├── API_TESTING.md                # API testing
 │   └── POSTMAN_GUIDE.md              # Postman guide
 │
@@ -554,47 +630,6 @@ docs/
 - **[Frontend Integration →](03-advanced/FRONTEND_INTEGRATION.md)**
 - **[Production Deployment →](04-deployment/PRODUCTION.md)**
 - **[API Reference →](05-examples/API_REFERENCE.md)**
-
----
-
-**Framework:** Padi REST API v2.0  
-**Status:** Production Ready ✅  
-**Security Score:** 9.0/10 🛡️  
-**Performance Score:** 8.5/10 ⚡  
-**License:** MIT
-
-**Happy Coding!** 🌾
-
----
-
-## 🌟 Key Features
-
-- ⚡ **Auto CRUD Generator** - Generate models, controllers, and routes automatically
-- 🔐 **JWT Authentication** - Secure token-based authentication built-in
-- 🗄️ **Multi-Database** - MySQL, MariaDB, PostgreSQL, SQLite support
-- 🚀 **FrankenPHP Ready** - 3-10x performance boost with worker mode
-- 🛡️ **Security First** - SQL injection protection, rate limiting, CORS
-- 📦 **Zero Dependencies** - Pure PHP, no heavy frameworks
-- 🎯 **Frontend Ready** - Works with Vue, React, Angular, Next.js
-
----
-
-## 💬 Need Help?
-
-1. **Check the docs** - Most answers are in this documentation
-2. **Troubleshooting guide** - [INIT_APP_TROUBLESHOOTING.md](01-getting-started/INIT_APP_TROUBLESHOOTING.md)
-3. **Examples** - See [05-examples/](05-examples/) for working code
-4. **Complete reference** - [README.md](README.md) has everything
-
----
-
-## 🚀 Quick Links
-
-- **[Get Started in 5 Minutes →](01-getting-started/QUICK_START.md)**
-- **[Complete Setup Guide →](01-getting-started/INIT_APP_GUIDE.md)**
-- **[Frontend Integration →](03-advanced/FRONTEND_INTEGRATION.md)**
-- **[Performance Optimization →](04-deployment/FRANKENPHP_SETUP.md)**
-- **[Full API Reference →](README.md)**
 
 ---
 

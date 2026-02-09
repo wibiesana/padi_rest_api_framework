@@ -20,12 +20,7 @@ class RoleMiddleware
     {
         // Check if user is authenticated
         if (!$request->user) {
-            $response = new Response();
-            $response->json([
-                'success' => false,
-                'message' => 'Authentication required',
-                'message_code' => 'UNAUTHORIZED'
-            ], 401);
+            throw new \Exception('Authentication required', 401);
         }
 
         // If no specific roles required, just check authentication
@@ -41,12 +36,7 @@ class RoleMiddleware
 
         // Check if user has required role
         if (!in_array($userRole, $allowedRoles, true)) {
-            $response = new Response();
-            $response->json([
-                'success' => false,
-                'message' => 'You do not have permission to access this resource',
-                'message_code' => 'FORBIDDEN'
-            ], 403);
+            throw new \Exception('You do not have permission to access this resource', 403);
         }
     }
 }

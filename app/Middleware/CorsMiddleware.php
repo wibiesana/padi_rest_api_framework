@@ -11,12 +11,14 @@ class CorsMiddleware
 {
     public function handle(Request $request): void
     {
-        // CORS headers are already set in Response class
-        // This middleware can be used for additional CORS logic if needed
+        // CORS headers are now primarily handled in public/index.php
+        // This middleware is kept for backward compatibility or custom logic.
 
         if ($request->method() === 'OPTIONS') {
+            // Handled in index.php, but if reached here, send empty 200
             $response = new Response();
             $response->status(200)->text('');
+            // terminate() in Response will handle worker mode return
         }
     }
 }

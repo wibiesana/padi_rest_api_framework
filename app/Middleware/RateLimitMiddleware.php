@@ -43,14 +43,8 @@ class RateLimitMiddleware
         // Filter requests within time window
         $requests = array_filter($requests, fn($timestamp) => $timestamp > $windowStart);
 
-        // Check if limit exceeded
         if (count($requests) >= $this->maxRequests) {
-            $response = new Response();
-            $response->json([
-                'success' => false,
-                'message' => 'Too many requests. Please try again later.',
-                'message_code' => 'RATE_LIMIT_EXCEEDED'
-            ], 429);
+            throw new \Exception('Too many requests. Please try again later.', 429);
         }
 
         // Add current request
