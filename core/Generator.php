@@ -68,8 +68,11 @@ class Generator
             }
         }
 
+        // Detect Primary Key
+        $primaryKey = $this->detectPrimaryKey($tableName);
+
         // 1. Generate Base ActiveRecord (Always overwrite)
-        $baseTemplate = $this->getBaseModelTemplate($modelName, $tableName, $fillable, $hidden, $baseNamespace);
+        $baseTemplate = $this->getBaseModelTemplate($modelName, $tableName, $fillable, $hidden, $baseNamespace, $primaryKey);
         $baseDir = $this->baseDir . '/app/Models/Base';
         if (!is_dir($baseDir)) mkdir($baseDir, 0755, true);
 
@@ -149,10 +152,13 @@ class Generator
         // 1. Get columns
         $columns = $this->getTableColumns($tableName);
 
-        // Ensure ID is included in Resource (as requested)
-        $schema = $this->getTableSchema($tableName);
-        if (array_key_exists('id', $schema)) {
-            array_unshift($columns, 'id');
+        // Ensure Primary Key(s) are included in Resource
+        $primaryKey = $this->detectPrimaryKey($tableName);
+        $pkList = is_array($primaryKey) ? $primaryKey : [$primaryKey];
+        foreach (array_reverse($pkList) as $pk) {
+            if (!in_array($pk, $columns)) {
+                array_unshift($columns, $pk);
+            }
         }
 
         // 2. Get relations
@@ -297,11 +303,27 @@ PHP;
      */
     private function getTableColumns(string $tableName): array
     {
+        // Detect Primary Key to exclude it if it's auto-increment
         $schema = $this->getTableSchema($tableName);
         $columns = array_keys($schema);
+        $primaryKey = $this->detectPrimaryKey($tableName);
+        $pkList = is_array($primaryKey) ? $primaryKey : [$primaryKey];
 
         // Exclude common auto-generated columns (including audit fields)
-        $exclude = ['id', 'created_at', 'updated_at', 'created_by', 'updated_by'];
+        $exclude = ['created_at', 'updated_at', 'created_by', 'updated_by'];
+
+        foreach ($pkList as $pk) {
+            if (strpos($schema[$pk]['Extra'] ?? '', 'auto_increment') !== false) {
+                $exclude[] = $pk;
+            }
+        }
+
+        // Also exclude legacy 'id' if explicitly present and we want to keep it consistent
+        if (isset($schema['id']) && !in_array('id', $exclude)) {
+            // If 'id' exists but isn't the PK, it might still be auto-increment in some designs?
+            // But usually it WOULD be the PK. Let's stick to the explicit excludes.
+        }
+
         return array_diff($columns, $exclude);
     }
 
@@ -376,7 +398,9 @@ PHP;
     private function generateValidationRules(array $schema, string $tableName): array
     {
         $rules = [];
-        $exclude = ['id', 'created_at', 'updated_at', 'deleted_at'];
+        $pks = $this->detectPrimaryKey($tableName);
+        $pkList = is_array($pks) ? $pks : [$pks];
+        $exclude = array_merge(['created_at', 'updated_at', 'deleted_at'], $pkList);
 
         foreach ($schema as $column => $info) {
             if (in_array($column, $exclude)) continue;
@@ -518,6 +542,29 @@ PHP;
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Detect the primary key(s) for a table
+     */
+    private function detectPrimaryKey(string $tableName): string|array
+    {
+        $schema = $this->getTableSchema($tableName);
+        if (empty($schema)) return 'id';
+
+        $pks = [];
+        foreach ($schema as $column => $info) {
+            if (($info['Key'] ?? '') === 'PRI') {
+                $pks[] = $column;
+            }
+        }
+
+        if (count($pks) === 0) {
+            // Fallback to 'id' if it exists, otherwise use first column
+            return isset($schema['id']) ? 'id' : array_key_first($schema);
+        }
+
+        return count($pks) === 1 ? $pks[0] : $pks;
+    }
+
 
 
     /**
@@ -547,7 +594,7 @@ PHP;
     /**
      * Get Base Model template
      */
-    private function getBaseModelTemplate(string $modelName, string $tableName, array $fillable, array $hidden, string $namespace): string
+    private function getBaseModelTemplate(string $modelName, string $tableName, array $fillable, array $hidden, string $namespace, string|array $primaryKey = 'id'): string
     {
         $fillableStr = "'" . implode("', '", $fillable) . "'";
         $hiddenStr = empty($hidden) ? '' : "'" . implode("', '", $hidden) . "'";
@@ -742,6 +789,8 @@ PHP;
     }
 PHP;
 
+        $pkStr = is_array($primaryKey) ? "['" . implode("', '", $primaryKey) . "']" : "'$primaryKey'";
+
         return <<<PHP
 <?php
 
@@ -752,7 +801,7 @@ use Core\ActiveRecord;
 class {$modelName} extends ActiveRecord
 {
     protected string \$table = '{$tableName}';
-    protected string|array \$primaryKey = 'id';
+    protected string|array \$primaryKey = {$pkStr};
     
     protected array \$fillable = [
         {$fillableStr}
