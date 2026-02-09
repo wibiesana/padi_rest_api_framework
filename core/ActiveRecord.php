@@ -107,8 +107,11 @@ abstract class ActiveRecord
      * Get the LIKE operator based on database driver
      * Use ILIKE for PostgreSQL for case-insensitive search
      */
-    public function getLikeOperator(): string
+    public function getLikeOperator(bool $caseSensitive = false): string
     {
+        if ($caseSensitive) {
+            return 'LIKE';
+        }
         $driver = DatabaseManager::getDriver($this->connection);
         return in_array($driver, ['pgsql', 'postgres', 'postgresql']) ? 'ILIKE' : 'LIKE';
     }

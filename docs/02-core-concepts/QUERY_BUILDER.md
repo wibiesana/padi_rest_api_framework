@@ -124,10 +124,18 @@ $query->select('category, COUNT(*) as total')
       ->having('total > 5');
 ```
 
-### `limit($limit)` & `offset($offset)`
-
 ```php
 $query->limit(10)->offset(20);
+```
+
+### `autoIlike(bool $value)`
+
+Enables or disables automatic `ILIKE` conversion for PostgreSQL. Enabled by default.
+
+```php
+// Use Case-Sensitive 'LIKE' on PostgreSQL
+$query->autoIlike(false)
+      ->where(['like', 'name', 'Laptop']);
 ```
 
 ---

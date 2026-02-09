@@ -27,6 +27,7 @@ class Query
     protected ?int $offset = null;
     protected bool $distinct = false;
     protected ?string $connectionName = null;
+    protected bool $autoIlike = true;
 
     public function __construct(?string $connection = null)
     {
@@ -195,6 +196,15 @@ class Query
     public function limit(int $limit): self
     {
         $this->limit = $limit;
+        return $this;
+    }
+
+    /**
+     * Enable or disable automatic ILIKE for PostgreSQL
+     */
+    public function autoIlike(bool $value): self
+    {
+        $this->autoIlike = $value;
         return $this;
     }
 

@@ -425,6 +425,11 @@ DatabaseManager::addConnection('mongodb', [
    - The framework automatically reuses established connections.
    - No need to worry about multiple connections.
 
+5. **Search Operator Compatibility**
+   - The framework automatically handles `ILIKE` for PostgreSQL to provide case-insensitive search by default.
+   - For other drivers like MySQL or SQLite, it falls back to the standard `LIKE`.
+   - You can bypass this behavior by using the `autoIlike(false)` method in Query Builder or passing `true` as the first argument to the model's `getLikeOperator(true)` method.
+
 ---
 
 ## 🐛 Troubleshooting
