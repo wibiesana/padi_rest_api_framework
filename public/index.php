@@ -77,6 +77,11 @@ $handler = function () use ($router, $config) {
     // Set exception handler for global uncaught exceptions
     set_exception_handler(function ($exception) use ($config) {
         $response = new \Core\Response();
+
+        // Use exception code if it's a valid HTTP status code, otherwise default to 500
+        $code = $exception->getCode();
+        $statusCode = ($code >= 400 && $code < 600) ? (int)$code : 500;
+
         $error = [
             'success' => false,
             'message' => 'Internal Server Error',
@@ -87,6 +92,10 @@ $handler = function () use ($router, $config) {
             $error['message'] = 'Database error occurred';
             $error['message_code'] = 'DATABASE_ERROR';
             \Core\DatabaseManager::logError($exception);
+        } else {
+            // For general exceptions, use the exception message
+            $error['message'] = $exception->getMessage();
+            $error['message_code'] = 'EXCEPTION';
         }
 
         if ($config['app_debug']) {
@@ -98,7 +107,7 @@ $handler = function () use ($router, $config) {
             ];
         }
 
-        $response->json($error, 500);
+        $response->json($error, $statusCode);
     });
 
     // Reset state between requests (Essential for FrankenPHP worker mode)
