@@ -129,7 +129,8 @@ class Router
         $path = $path === '/' ? '/' : rtrim($path, '/');
 
         // Pre-compile regex for performance
-        $regex = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '(?P<$1>[^/]+)', $path);
+        $regex = preg_replace('/\{([a-zA-Z0-9_]+)\*\}/', '(?P<$1>.*)', $path);
+        $regex = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '(?P<$1>[^/]+)', $regex);
         $regex = '#^' . $regex . '$#';
 
         $this->routes[] = [
@@ -150,9 +151,6 @@ class Router
     {
         $method = $request->method();
         $uri = rtrim($request->uri(), '/') ?: '/';
-
-        // Set request for Auth class (Optimization for PHP 8.4/Worker mode)
-        Auth::setRequest($request);
 
 
         foreach ($this->routes as $route) {

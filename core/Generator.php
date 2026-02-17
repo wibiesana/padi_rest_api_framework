@@ -734,7 +734,7 @@ PHP;
     /**
      * Search with pagination and joins
      */
-    public function searchPaginate(string \$keyword, int \$page = 1, int \$perPage = 10): array
+    public function searchPaginate(string \$keyword, int \$page = 1, int \$perPage = 25, ?string \$orderBy = null): array
     {
         \$like = \$this->getLikeOperator();
         \$searchTerm = "%\$keyword%";
@@ -754,12 +754,22 @@ PHP;
 
         \$total = \$countStmt->fetch(\PDO::FETCH_ASSOC)['total'];
 
-        // 2. Get Data
+        // 2. Prepare Order Clause
+        \$orderClause = '';
+        if (\$orderBy && preg_match('/^[a-zA-Z0-9_. ]+$/', \$orderBy)) {
+            \$orderClause = " ORDER BY {\$orderBy}";
+        }
+
+        if (empty(\$orderClause)) {
+            \$orderClause = " ORDER BY {\$this->table}.{\$this->primaryKey} DESC";
+        }
+
+        // 3. Get Data
         \$sql = "SELECT {\$this->table}.* 
                 FROM {\$this->table} 
                 {$joinClause}
                 WHERE {$whereClause}
-                ORDER BY {\$this->table}.{\$this->primaryKey} DESC
+                {\$orderClause}
                 LIMIT :limit OFFSET :offset";
 
         \$stmt = \$this->db->prepare(\$sql);
@@ -770,7 +780,7 @@ PHP;
         
         \$results = \$stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        // 3. Eager load if needed (optional)
+        // 4. Eager load if needed (optional)
         if (!empty(\$results)) {
             \$this->loadRelations(\$results);
         }
@@ -815,14 +825,25 @@ class {$modelName} extends ActiveRecord
     /**
      * Search {$tableName} (simple limit)
      */
-    public function search(string \$keyword): array
+    public function search(string \$keyword, ?string \$orderBy = null): array
     {
         \$like = \$this->getLikeOperator();
         \$searchTerm = "%\$keyword%";
         
+        // Prepare Order Clause
+        \$orderClause = '';
+        if (\$orderBy && preg_match('/^[a-zA-Z0-9_. ]+$/', \$orderBy)) {
+            \$orderClause = " ORDER BY {\$orderBy}";
+        }
+
+        if (empty(\$orderClause)) {
+            \$orderClause = " ORDER BY {\$this->table}.{\$this->primaryKey} DESC";
+        }
+
         \$sql = "SELECT {\$this->table}.* FROM {\$this->table} 
                 {$joinClause}
                 WHERE {$whereClause}
+                {\$orderClause}
                 LIMIT 100";
         
         \$results = \$this->query(\$sql, [
@@ -947,15 +968,25 @@ class {$controllerName} extends Controller
     public function index()
     {{$withRelationsStr}
         \$page = max(1, (int)\$this->request->query('page', 1)); // Min page 1
-        \$perPage = min(100, max(1, (int)\$this->request->query('per-page', 10))); // Max 100 per page
+        \$perPage = min(100, max(1, (int)\$this->request->query('per-page', 25))); // Max 100 per page
         \$search = \$this->request->query('search');
         
+        // Handle Sorting
+        \$sortBy = \$this->request->query('sort_by');
+        \$order = \$this->request->query('order', 'asc');
+        \$orderBy = null;
+
+        if (\$sortBy) {
+            \$direction = strtolower(\$order) === 'desc' ? 'DESC' : 'ASC';
+            \$orderBy = "{\$sortBy} {\$direction}";
+        }
+
         if (\$search) {
             // Limit search query length to prevent abuse
             \$search = substr(\$search, 0, 255);
-            \$result = \$this->model->searchPaginate(\$search, \$page, \$perPage);
+            \$result = \$this->model->searchPaginate(\$search, \$page, \$perPage, \$orderBy);
         } else {
-            \$result = \$this->model->paginate(\$page, \$perPage);
+            \$result = \$this->model->paginate(\$page, \$perPage, [], \$orderBy);
         }
 
         return {$modelName}Resource::collection(\$result);
@@ -968,10 +999,21 @@ class {$controllerName} extends Controller
     public function all()
     {{$withRelationsStr}
         \$search = \$this->request->query('search');
-        if (\$search) {
-             return {$modelName}Resource::collection(\$this->model->search(\$search));
+
+        // Handle Sorting
+        \$sortBy = \$this->request->query('sort_by');
+        \$order = \$this->request->query('order', 'asc');
+        \$orderBy = null;
+
+        if (\$sortBy) {
+            \$direction = strtolower(\$order) === 'desc' ? 'DESC' : 'ASC';
+            \$orderBy = "{\$sortBy} {\$direction}";
         }
-        return {$modelName}Resource::collection(\$this->model->all());
+
+        if (\$search) {
+             return {$modelName}Resource::collection(\$this->model->search(\$search, \$orderBy));
+        }
+        return {$modelName}Resource::collection(\$this->model->all(['*'], \$orderBy));
     }
     
     /**
@@ -1197,12 +1239,12 @@ PHP;
                         'method' => 'GET',
                         'header' => [],
                         'url' => [
-                            'raw' => "{{base_url}}{$apiPrefix}/{$prefix}?page=1&per-page=10",
+                            'raw' => "{{base_url}}{$apiPrefix}/{$prefix}?page=1&per-page=25",
                             'host' => ['{{base_url}}'],
                             'path' => [ltrim($apiPrefix, '/'), $prefix],
                             'query' => [
                                 ['key' => 'page', 'value' => '1'],
-                                ['key' => 'per-page', 'value' => '10']
+                                ['key' => 'per-page', 'value' => '25']
                             ]
                         ]
                     ],

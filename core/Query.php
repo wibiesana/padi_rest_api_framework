@@ -26,12 +26,9 @@ class Query
     protected ?int $limit = null;
     protected ?int $offset = null;
     protected bool $distinct = false;
-    protected ?string $connectionName = null;
-    protected bool $autoIlike = true;
 
     public function __construct(?string $connection = null)
     {
-        $this->connectionName = $connection;
         $this->db = Database::connection($connection);
     }
 
@@ -196,15 +193,6 @@ class Query
     public function limit(int $limit): self
     {
         $this->limit = $limit;
-        return $this;
-    }
-
-    /**
-     * Enable or disable automatic ILIKE for PostgreSQL
-     */
-    public function autoIlike(bool $value): self
-    {
-        $this->autoIlike = $value;
         return $this;
     }
 
@@ -438,17 +426,7 @@ class Query
             }
 
             $this->params[$paramName] = $value;
-
-            // Auto-detect driver to use ILIKE for PostgreSQL Case-Insensitive search
-            $op = $operator;
-            if ($operator === 'LIKE') {
-                $driver = DatabaseManager::getDriver($this->connectionName);
-                if (in_array($driver, ['pgsql', 'postgres', 'postgresql'])) {
-                    $op = 'ILIKE';
-                }
-            }
-
-            return "$column $op $paramName";
+            return "$column $operator $paramName";
         }
 
         if ($operator === 'AND' || $operator === 'OR') {

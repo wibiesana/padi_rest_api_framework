@@ -113,9 +113,14 @@ class Validator
                 break;
 
             case 'unique':
-                // Format: unique:table,column
-                [$table, $column] = explode(',', $ruleValue);
-                if (!empty($value) && $this->checkUnique($table, $column, $value)) {
+                // Format: unique:table,column,ignoreId,idColumn
+                $params = explode(',', $ruleValue);
+                $table = $params[0] ?? '';
+                $column = $params[1] ?? '';
+                $ignoreId = $params[2] ?? null;
+                $idColumn = $params[3] ?? 'id';
+
+                if (!empty($value) && $this->checkUnique($table, $column, $value, $ignoreId, $idColumn)) {
                     $this->addError($field, $ruleName, "The {field} has already been taken");
                 }
                 break;
@@ -181,7 +186,7 @@ class Validator
     /**
      * Check if value is unique in database
      */
-    private function checkUnique(string $table, string $column, $value): bool
+    private function checkUnique(string $table, string $column, $value, $ignoreId = null, string $idColumn = 'id'): bool
     {
         try {
             // Validate table and column names to prevent SQL injection
@@ -191,10 +196,21 @@ class Validator
             if (!preg_match('/^[a-zA-Z0-9_]+$/', $column)) {
                 throw new \InvalidArgumentException("Invalid column name: {$column}");
             }
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $idColumn)) {
+                throw new \InvalidArgumentException("Invalid id column name: {$idColumn}");
+            }
+
+            $sql = "SELECT COUNT(*) as count FROM {$table} WHERE {$column} = :value";
+            $params = ['value' => $value];
+
+            if ($ignoreId !== null && $ignoreId !== '') {
+                $sql .= " AND {$idColumn} != :ignoreId";
+                $params['ignoreId'] = $ignoreId;
+            }
 
             $db = Database::getInstance()->getConnection();
-            $stmt = $db->prepare("SELECT COUNT(*) as count FROM {$table} WHERE {$column} = :value");
-            $stmt->execute(['value' => $value]);
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
             $result = $stmt->fetch(\PDO::FETCH_ASSOC);
 
             return $result['count'] > 0;

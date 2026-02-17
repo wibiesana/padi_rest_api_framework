@@ -60,6 +60,21 @@ abstract class ActiveRecord
     private static array $columnsCache = [];
 
     /**
+     * Get the LIKE operator based on the database driver
+     * 
+     * @return string 'LIKE' or 'ILIKE'
+     */
+    protected function getLikeOperator(): string
+    {
+        try {
+            $driver = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
+            return $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
+        } catch (\Exception $e) {
+            return 'LIKE';
+        }
+    }
+
+    /**
      * Database connection name to use
      * Set this in your model to use a specific database connection
      * 
@@ -101,19 +116,6 @@ abstract class ActiveRecord
     public static function findQuery(): Query
     {
         return static::findBuilder();
-    }
-
-    /**
-     * Get the LIKE operator based on database driver
-     * Use ILIKE for PostgreSQL for case-insensitive search
-     */
-    public function getLikeOperator(bool $caseSensitive = false): string
-    {
-        if ($caseSensitive) {
-            return 'LIKE';
-        }
-        $driver = DatabaseManager::getDriver($this->connection);
-        return in_array($driver, ['pgsql', 'postgres', 'postgresql']) ? 'ILIKE' : 'LIKE';
     }
 
     /**

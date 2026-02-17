@@ -164,7 +164,7 @@ abstract class Controller
     /**
      * Return simple response format
      */
-    protected function simple($data, string $status = 'success', string $code = null, int $statusCode = 200)
+    protected function simple($data, string $status = 'success', ?string $code = null, int $statusCode = 200)
     {
         $this->setStatusCode($statusCode);
         return [
