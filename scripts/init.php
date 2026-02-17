@@ -251,6 +251,7 @@ try {
 
     try {
         require_once $projectRoot . '/vendor/autoload.php';
+        if (!defined('PADI_ROOT')) define('PADI_ROOT', $projectRoot);
         Core\Env::load($projectRoot . '/.env');
 
         $db = Core\DatabaseManager::connection();

@@ -3,6 +3,9 @@
 // Load composer autoloader
 require_once __DIR__ . '/../vendor/autoload.php';
 
+// Define project root path
+define('PADI_ROOT', dirname(__DIR__));
+
 // Debug REQUEST
 file_put_contents(__DIR__ . '/../server_dump.txt', print_r($_SERVER, true));
 

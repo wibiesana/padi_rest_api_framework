@@ -2,6 +2,9 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+// Define project root path
+define('PADI_ROOT', dirname(__DIR__));
+
 use Core\Env;
 use Core\Migrator;
 use Core\DatabaseManager;
