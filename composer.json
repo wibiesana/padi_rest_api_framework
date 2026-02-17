@@ -3,10 +3,10 @@
     "description": "Padi REST API Framework: Grow Silent, Feed Many. Lightweight & Scalable.",
     "type": "project",
     "license": "MIT",
-    "homepage": "https://github.com/wibiesana/padi_rest_api_framework",
+    "homepage": "https://github.com/wibiesana/padi_rest_api",
     "support": {
-        "issues": "https://github.com/wibiesana/padi_rest_api_framework/issues",
-        "source": "https://github.com/wibiesana/padi_rest_api_framework"
+        "issues": "https://github.com/wibiesana/padi_rest_api/issues",
+        "source": "https://github.com/wibiesana/padi_rest_api"
     },
     "require": {
         "php": ">=8.4",
