@@ -1,5 +1,14 @@
 # CHANGE LOG
 
+## v1.0.2 (2026-02-17)
+
+### Package & Dependency Management
+
+- **Packagist Integration**:
+  - Official registration of `padi-template` on Packagist as `wibiesana/padi-rest-api`.
+  - Migrated core functionality to external dependency `wibiesana/padi-core` (v1.0.2+).
+  - Removed local `core/` directory; framework core is now managed via Composer.
+
 ## v1.0.1 (2026-02-17)
 
 ### Core Framework Updates
