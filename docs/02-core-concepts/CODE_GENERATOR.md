@@ -1,6 +1,6 @@
 # ⚡ Code Generator
 
-**Padi REST API Framework v1.0.0**
+**Padi REST API Framework v1.0.1**
 
 ---
 
@@ -308,6 +308,20 @@ GET /products?search=laptop
 ```
 GET /products?page=1&per_page=20&search=laptop
 ```
+
+**Sorting Search Results:**
+
+```
+GET /products?search=laptop&sort_by=price&order=desc
+```
+
+| Parameter  | Type   | Default | Description                           |
+| ---------- | ------ | ------- | ------------------------------------- |
+| `search`   | string | null    | Keyword to search across fields.      |
+| `sort_by`  | string | null    | Column name to sort by.               |
+| `order`    | string | `asc`   | Sort direction (`asc` or `desc`).     |
+| `page`     | int    | 1       | Page number for pagination.           |
+| `per_page` | int    | 25      | Items per page (default 25, max 100). |
 
 ---
 
