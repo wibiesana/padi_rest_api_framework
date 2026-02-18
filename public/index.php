@@ -35,7 +35,9 @@ $handler = function () use ($router, $config) {
     // Re-check origin for each request in worker mode
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
     $isDevelopment = Core\Env::get('APP_ENV') === 'development';
-    $allowedOrigins = array_filter(explode(',', Core\Env::get('CORS_ALLOWED_ORIGINS', '')));
+    $allowedOrigins = array_map(function ($url) {
+        return rtrim(trim($url), '/');
+    }, explode(',', Core\Env::get('CORS_ALLOWED_ORIGINS', '')));
 
     if (!empty($origin)) {
         if ($isDevelopment || in_array($origin, $allowedOrigins)) {
@@ -113,6 +115,31 @@ $handler = function () use ($router, $config) {
     // Reset state between requests (Essential for FrankenPHP worker mode)
     \Core\Database::resetQueryLog();
     \Core\DatabaseManager::clearErrors();
+
+    /**
+     * Fix for shared hosting where REQUEST_URI might contain script path
+     */
+    if (isset($_SERVER['REQUEST_URI']) && isset($_SERVER['SCRIPT_NAME'])) {
+        $uri = $_SERVER['REQUEST_URI'];
+        $scriptName = $_SERVER['SCRIPT_NAME'];
+        $scriptDir = dirname($scriptName);
+
+        // Remove script name from URI if present (e.g. /index.php/foo/bar -> /foo/bar)
+        if (strpos($uri, $scriptName) === 0) {
+            $uri = substr($uri, strlen($scriptName));
+        }
+        // Remove script dir from URI if present (e.g. /public/foo/bar -> /foo/bar)
+        elseif ($scriptDir !== '/' && strpos($uri, $scriptDir) === 0) {
+            $uri = substr($uri, strlen($scriptDir));
+        }
+
+        // Ensure URI starts with /
+        if ($uri === '' || $uri[0] !== '/') {
+            $uri = '/' . $uri;
+        }
+
+        $_SERVER['REQUEST_URI'] = $uri;
+    }
 
     // Create request instance & Dispatch
     $request = new \Core\Request();
